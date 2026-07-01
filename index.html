@@ -14,9 +14,9 @@
   .brand h1{font-size:30px;margin:0;font-weight:800;letter-spacing:.2px}
   .clock{font-weight:800;font-size:30px;color:var(--accent)}
   .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:18px}
-  .card{position:relative;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow),0 10px 24px rgba(255,255,255,0.08);padding:18px;min-height:144px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease;}
+  .card{position:relative;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow),0 10px 24px rgba(255,255,255,0.08);padding:18px;min-height:216px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease;}
   .card:hover{transform:translateY(-2px);box-shadow:var(--shadow),0 14px 28px rgba(255,255,255,0.12);}
-  .name{font-size:24px;font-weight:800;letter-spacing:.3px;margin:0 0 4px 0}
+  .name{font-size:44px;font-weight:800;letter-spacing:.3px;margin:0 0 4px 0}
   .meta{display:flex;align-items:center;gap:10px;color:var(--muted);font-weight:600}
   .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;font-weight:800;font-size:14px;color:white}
   .pill svg{width:16px;height:16px}
@@ -62,7 +62,7 @@
 const BUSY_STATES = new Set(['ocupada', 'debrief']);
 const ROOM_ORDER = [
   'Sala de Parto',
-  'Neonatología',
+  'Neo- natología',
   'Terapia Intensiva',
   'Quirófano',
   'Consultorio Adulto',
