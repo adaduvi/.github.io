@@ -6,32 +6,29 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#020617; --card:#111827; --ink:#f8fafc; --muted:#94a3b8; --ok:#14b8a6; --busy:#ef4444; --prep:#f59e0b; --maint:#64748b; --accent:#60a5fa; --radius:18px; --shadow:0 8px 30px rgba(2,6,23,.45); color-scheme: dark;}
+  :root{ --bg:#020617; --card:#111827; --ink:#f8fafc; --muted:#94a3b8; --ok:#14b8a6; --busy:#ef4444; --accent:#60a5fa; --radius:18px; --shadow:0 8px 30px rgba(2,6,23,.45); color-scheme: dark;}
   html,body{height:100%;margin:0;background:linear-gradient(180deg,#0f172a,var(--bg));font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--ink);}
   .wrap{max-width:1920px;margin:0 auto;padding:24px 40px;}
   header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
   .brand{display:flex;gap:16px;align-items:center}
   .brand h1{font-size:30px;margin:0;font-weight:800;letter-spacing:.2px}
   .clock{font-weight:800;font-size:30px;color:var(--accent)}
-  .banner{background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid #334155;padding:12px 16px;border-radius:14px;display:flex;align-items:center;gap:12px;color:#e2e8f0;margin-bottom:16px}
   .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:18px}
-  .card{position:relative;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow),0 10px 24px rgba(255,255,255,0.08);padding:18px 18px 16px;min-height:144px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease;}
+  .card{position:relative;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow),0 10px 24px rgba(255,255,255,0.08);padding:18px;min-height:144px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease;}
   .card:hover{transform:translateY(-2px);box-shadow:var(--shadow),0 14px 28px rgba(255,255,255,0.12);}
   .name{font-size:24px;font-weight:800;letter-spacing:.3px;margin:0 0 4px 0}
   .meta{display:flex;align-items:center;gap:10px;color:var(--muted);font-weight:600}
   .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;font-weight:800;font-size:14px;color:white}
   .pill svg{width:16px;height:16px}
-  .msg{font-size:18px;font-weight:700;margin-top:8px}
   .time{font-size:15px;color:var(--muted);margin-top:2px}
   .foot{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
   .next{font-size:15px;color:#e2e8f0;background:#1e293b;border:1px solid #334155;padding:6px 10px;border-radius:10px;font-weight:600}
-  .stamp{font-size:14px;color:var(--muted)}
   .alert-card{display:none;align-items:center;justify-content:center;flex-direction:column;gap:8px;width:calc(100% - 16px);max-width:100%;margin:25px auto 18px auto;padding:64px 24px;border-radius:24px;background:linear-gradient(135deg,#b91c1c,#ef4444);color:#fff;box-shadow:0 14px 40px rgba(239,68,68,.35);border:2px solid rgba(255,255,255,.25);box-sizing:border-box;animation:alertBlink 2.4s ease-in-out infinite alternate}
   .alert-card strong{font-size:58px;font-weight:800;letter-spacing:.2px}
   .alert-card span{font-size:48px;font-weight:700;opacity:.98}
   @keyframes alertBlink{0%{background:linear-gradient(135deg,#b91c1c,#ef4444);transform:scale(1)}25%{background:linear-gradient(135deg,#ef4444,#ff1f1f);transform:scale(1.008)}50%{background:linear-gradient(135deg,#b91c1c,#ef4444);transform:scale(1)}75%{background:linear-gradient(135deg,#ef4444,#ff1f1f);transform:scale(1.008)}100%{background:linear-gradient(135deg,#b91c1c,#ef4444);transform:scale(1)}}
   .ring{position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;filter:blur(0.2px);opacity:.12;}
-  .libre{background:var(--ok)} .ocupada{background:var(--busy)} .preparacion,.limpieza{background:var(--prep)} .mantenimiento{background:var(--maint)} .debrief{background:var(--busy)} .emergencia{background:linear-gradient(135deg,#ef4444,#dc2626)}
+  .libre{background:var(--ok)} .ocupada,.debrief{background:var(--busy)}
   .pulse{animation:pulse 2.2s ease-in-out infinite}
   @keyframes pulse{0%{transform:scale(1);opacity:.18}50%{transform:scale(1.08);opacity:.10}100%{transform:scale(1);opacity:.18}}
   @media (max-width:1400px){ .grid{grid-template-columns:repeat(3,1fr);} }
@@ -62,86 +59,105 @@
 </div>
 
 <script>
-// URL de tu Web App:
-const APPS_SCRIPT = "https://controlsentrosim.md-ahumadar.workers.dev/";
+const BUSY_STATES = new Set(['ocupada', 'debrief']);
+const ROOM_ORDER = [
+  'Sala de Parto',
+  'Neonatología',
+  'Terapia Intensiva',
+  'Quirófano',
+  'Consultorio Adulto',
+  'Consultorio Pediatría',
+  'Sala de Debriefing A-B',
+  'Sala de Debriefing C-D'
+];
 
-function fmtRel(ms){ if(!ms)return ''; const s=Math.round(ms/1000), m=Math.floor(s/60), h=Math.floor(m/60); if(h>0)return `${h}h ${m%60}m`; if(m>0)return `${m}m`; return `${s}s`; }
-function iconSVG(){ return '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="6" fill="currentColor"/></svg>'; }
+const ROOM_DEFINITIONS = ROOM_ORDER.map((name) => ({
+  name,
+  type: name.includes('Debriefing') ? 'debrief' : 'room',
+  state: 'libre'
+}));
 
+let roomsData = ROOM_DEFINITIONS.map((room) => ({ ...room }));
 
-function stateLabel(r){
-  if (r.state === 'ocupada') return (r.type === 'debrief' ? 'Debrief en curso' : 'En Simulación');
-  if (r.state === 'debrief') return 'Debrief en curso';
-  if (r.state === 'preparacion') return 'Preparación';
-  if (r.state === 'limpieza') return 'Limpieza';
-  if (r.state === 'mantenimiento') return 'Mantenimiento';
-  if (r.state === 'emergencia') return 'Emergencia';
+function iconSVG() {
+  return '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="6" fill="currentColor"/></svg>';
+}
+
+function stateLabel(room) {
+  if (room.state === 'debrief') return 'Debrief en curso';
+  if (room.state === 'ocupada') return 'En Simulación';
   return 'Libre';
 }
 
-function roomDisplayName(name){
-  const normalized=(name||'').toString().trim().toLowerCase();
-  if(['sala de debriefing 1','sala 1','1','debriefing 1','debriefing a-b'].includes(normalized)) return 'Sala de Debriefing A-B';
-  if(['sala de debriefing 2','sala 2','2','debriefing 2','debriefing c-d'].includes(normalized)) return 'Sala de Debriefing C-D';
+function roomDisplayName(name) {
+  const normalized = (name || '').toString().trim().toLowerCase();
+  if (['sala de debriefing 1', 'sala 1', '1', 'debriefing 1', 'debriefing a-b'].includes(normalized)) return 'Sala de Debriefing A-B';
+  if (['sala de debriefing 2', 'sala 2', '2', 'debriefing 2', 'debriefing c-d'].includes(normalized)) return 'Sala de Debriefing C-D';
   return name;
 }
 
-let lastData=null;
-
-function getRoomKey(room){ return roomDisplayName(room.name); }
-
-function getRoomState(room){
-  const key=getRoomKey(room);
-  const overrides=window.roomStateOverrides || {};
-  return overrides[key] || room.state || 'libre';
+function getRoomByName(name) {
+  const key = roomDisplayName(name);
+  return roomsData.find((room) => roomDisplayName(room.name) === key);
 }
 
-function toggleRoomState(room){
-  const key=getRoomKey(room);
-  const current=getRoomState(room);
-  const next=current === 'libre' ? 'ocupada' : 'libre';
-  window.roomStateOverrides = window.roomStateOverrides || {};
-  window.roomStateOverrides[key] = next;
-  if(lastData) render(lastData);
+function toggleRoomState(name) {
+  const room = getRoomByName(name);
+  if (!room) return;
+
+  if (room.type === 'debrief') {
+    room.state = room.state === 'libre' ? 'debrief' : 'libre';
+  } else {
+    room.state = room.state === 'libre' ? 'ocupada' : 'libre';
+  }
+
+  render();
 }
 
-function render(data){
-  lastData=data;
-  const now=data.now; const grid=document.getElementById('grid'); grid.innerHTML=''; let anyBusy=false;
-  const order=['Sala de Parto','Neonatología','Terapia Intensiva','Quirófano','Consultorio Adulto','Consultorio Pediatría','Sala de Debriefing A-B','Sala de Debriefing C-D'];
-  const rooms=data.rooms.slice().sort((a,b)=> {
-    const aName=roomDisplayName(a.name);
-    const bName=roomDisplayName(b.name);
-    return order.indexOf(aName)-order.indexOf(bName);
+function getCardStyle(roomState) {
+  if (roomState === 'libre') return { ringColor: '#1f8a70', cardColor: '#0f4d3a' };
+  return { ringColor: '#d7263d', cardColor: '#b91c1c' };
+}
+
+function render() {
+  const now = new Date();
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  let anyBusy = false;
+
+  const rooms = [...roomsData].sort((a, b) => {
+    const aName = roomDisplayName(a.name);
+    const bName = roomDisplayName(b.name);
+    return ROOM_ORDER.indexOf(aName) - ROOM_ORDER.indexOf(bName);
   });
-  rooms.forEach(r=>{
-    const roomState=getRoomState(r);
-    const pillClass=roomState||'libre';
-    if(['ocupada','debrief','emergencia'].includes(roomState)) anyBusy=true;
-    const ringColor = roomState==='libre' ? '#1f8a70' : (['ocupada','debrief'].includes(roomState) ? '#d7263d' : (['preparacion','limpieza'].includes(roomState) ? '#f59e0b' : (roomState==='mantenimiento' ? '#9aa6b2' : '#ef4444')));
-    const cardColor = roomState==='libre' ? '#0f4d3a' : (['ocupada','debrief','emergencia'].includes(roomState) ? '#b91c1c' : 'var(--card)');
-    let timeLine=''; if(r.endAt && r.endAt>now){ timeLine=`Termina en ${fmtRel(r.endAt-now)}`; }
-    let next=''; if(r.nextTitle && r.nextStartAt && r.nextStartAt>now){ next=`Próximo: ${r.nextTitle} · inicia en ${fmtRel(r.nextStartAt-now)}`; }
-    const card=document.createElement('div'); card.className='card'; card.style.background=cardColor; card.addEventListener('click',()=>toggleRoomState(r)); card.innerHTML=`
-      <div class="ring ${roomState!=='libre' ? 'pulse' : ''}" style="background:${ringColor}"></div>
 
+  rooms.forEach((room) => {
+    const roomState = room.state;
+    if (BUSY_STATES.has(roomState)) anyBusy = true;
+
+    const { ringColor, cardColor } = getCardStyle(roomState);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.background = cardColor;
+    card.addEventListener('click', () => toggleRoomState(room.name));
+    card.innerHTML = `
+      <div class="ring ${roomState !== 'libre' ? 'pulse' : ''}" style="background:${ringColor}"></div>
       <div>
-        <h2 class="name">${roomDisplayName(r.name)}</h2>
-        <div class="meta"><span class="pill ${pillClass}">${iconSVG()} ${stateLabel({...r, state: roomState})}</span></div>
-        ${timeLine? `<div class="time">${timeLine}</div>` : '' }
+        <h2 class="name">${roomDisplayName(room.name)}</h2>
+        <div class="meta"><span class="pill ${roomState}">${iconSVG()} ${stateLabel(room)}</span></div>
       </div>
-      <div class="foot">
-        ${next? `<div class="next">${next}</div>` : '' }
-      </div>`;
+      <div class="foot"></div>`;
     grid.appendChild(card);
   });
-  document.getElementById('alertCard').style.display= anyBusy ? 'flex':'none';
-  document.getElementById('clock').textContent = new Date(now).toLocaleTimeString();
+
+  document.getElementById('alertCard').style.display = anyBusy ? 'flex' : 'none';
+  document.getElementById('clock').textContent = now.toLocaleTimeString();
 }
 
-function loadRooms(){ const s=document.createElement('script'); s.src=`${APPS_SCRIPT}?action=getRooms&format=jsonp&callback=render&_=${Date.now()}`; document.body.appendChild(s); }
-loadRooms(); setInterval(loadRooms, 9000);
-setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString()},1000);
+render();
+setInterval(() => {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+}, 1000);
 </script>
 </body>
 </html>
