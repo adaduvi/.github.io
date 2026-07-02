@@ -6,9 +6,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=roboto:wght@500;700;800&family=roboto+condensed:wght@600&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#020617; --card:#111827; --ink:#f8fafc; --muted:#94a3b8; --ok:#14b8a6; --busy:#ef4444; --accent:#60a5fa; --radius:18px; --shadow:0 8px 30px rgba(2,6,23,.45); color-scheme: dark;}
+  :root{ --bg:#170e2a; --card:#111827; --ink:#f8fafc; --muted:#94a3b8; --ok:#14b8a6; --busy:#ef4444; --accent:#60a5fa; --radius:18px; --shadow:0 8px 30px rgba(2,6,23,.45); color-scheme: dark;}
   html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--ink);}
-  body{background:var(--bg);transition:background 180s ease-in-out;}
+  body{background:var(--bg);}
   .wrap{max-width:1920px;margin:0 auto;padding:24px 40px;}
   body.cursor-hidden{cursor:none;}
   header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
@@ -92,19 +92,6 @@ const clock = document.getElementById('clock');
 const alertWrapper = document.getElementById('alertWrapper');
 
 let roomsData = ROOM_DEFINITIONS.map((room) => ({ ...room }));
-
-const darkBackgrounds = ['#0b0620', '#0a1f14', '#1f0b0b', '#071426'];
-
-let currentBackgroundIndex = 0;
-
-function changeBackground() {
-  currentBackgroundIndex = (currentBackgroundIndex + 1) % darkBackgrounds.length;
-  document.documentElement.style.setProperty('--bg', darkBackgrounds[currentBackgroundIndex]);
-  document.body.style.background = darkBackgrounds[currentBackgroundIndex];
-}
-
-changeBackground();
-setInterval(changeBackground, 180000);
 
 let inactivityTimer;
 const resetCursorTimer = () => {
