@@ -93,19 +93,12 @@ const alertWrapper = document.getElementById('alertWrapper');
 
 let roomsData = ROOM_DEFINITIONS.map((room) => ({ ...room }));
 
-const darkBackgrounds = [
-  '#020617', '#0f172a', '#111827', '#1e1b4b', '#1f2937', '#0b1120',
-  '#111827', '#172554', '#0f172a', '#312e81', '#1f2937', '#020617'
-];
+const darkBackgrounds = ['#0b0620', '#0a1f14', '#1f0b0b', '#071426'];
 
 let currentBackgroundIndex = 0;
 
 function changeBackground() {
-  let nextIndex = currentBackgroundIndex;
-  while (nextIndex === currentBackgroundIndex) {
-    nextIndex = Math.floor(Math.random() * darkBackgrounds.length);
-  }
-  currentBackgroundIndex = nextIndex;
+  currentBackgroundIndex = (currentBackgroundIndex + 1) % darkBackgrounds.length;
   document.documentElement.style.setProperty('--bg', darkBackgrounds[currentBackgroundIndex]);
   document.body.style.background = darkBackgrounds[currentBackgroundIndex];
 }
