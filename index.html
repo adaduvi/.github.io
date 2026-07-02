@@ -12,11 +12,12 @@
   header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
   .brand{display:flex;gap:16px;align-items:center}
   .brand h1{font-size:30px;margin:0;font-weight:800;letter-spacing:.2px}
-  .clock{font-weight:800;font-size:30px;color:var(--accent)}
+  .clock{display:flex;flex-direction:column;align-items:flex-end;font-weight:800;font-size:30px;color:var(--accent);line-height:1.1}
+  .clock .date{font-size:16px;color:var(--muted);font-weight:600;margin-top:2px}
   .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:18px}
   .card{position:relative;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow),0 10px 24px rgba(255,255,255,0.08);padding:18px;min-height:216px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease}
   .card:hover{transform:translateY(-2px);box-shadow:var(--shadow),0 14px 28px rgba(255,255,255,0.12)}
-  .name{font-size:69px;font-weight:600;font-family:'Roboto Condensed',sans-serif;letter-spacing:.3px;margin:0 0 4px 0}
+  .name{font-size:75px;font-weight:600;font-family:'Roboto Condensed',sans-serif;letter-spacing:.3px;margin:0 0 4px 0}
   .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;font-weight:800;font-size:14px;color:white}
   .pill svg{width:16px;height:16px}
   .time{font-size:15px;color:var(--muted);margin-top:2px}
@@ -49,7 +50,10 @@
       </svg>
       <h1>Centro de Simulacion</h1>
     </div>
-    <div class="clock" id="clock"></div>
+    <div class="clock" id="clock">
+      <span id="timeText"></span>
+      <span class="date" id="dateText"></span>
+    </div>
   </header>
   <section class="grid" id="grid"></section>
   <div class="alert-wrapper" id="alertWrapper" style="display:none">
@@ -156,12 +160,23 @@ function render() {
   });
 
   alertWrapper.style.display = anyBusy ? 'flex' : 'none';
-  clock.textContent = now.toLocaleTimeString();
+  document.getElementById('timeText').textContent = now.toLocaleTimeString();
+  document.getElementById('dateText').textContent = now.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
 }
 
 render();
 setInterval(() => {
-  clock.textContent = new Date().toLocaleTimeString();
+  const now = new Date();
+  document.getElementById('timeText').textContent = now.toLocaleTimeString();
+  document.getElementById('dateText').textContent = now.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
 }, 1000);
 </script>
 </body>
