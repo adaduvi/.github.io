@@ -22,11 +22,11 @@
   .time{font-size:15px;color:var(--muted);margin-top:2px}
   .foot{display:flex;justify-content:flex-start;align-items:flex-end;margin-top:auto}
   .next{font-size:15px;color:#e2e8f0;background:#1e293b;border:1px solid #334155;padding:6px 10px;border-radius:10px;font-weight:600}
-  .alert-wrapper{display:none;align-items:center;justify-content:center;gap:24px;width:calc(100% - 16px);max-width:100%;margin:25px auto 18px auto}
-  .alert-card{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;flex:1;padding:64px 24px;border-radius:24px;background:linear-gradient(135deg,#b91c1c 0%,#ef4444 35%,#f59e0b 70%,#facc15 100%);background-size:200% 200%;color:#fff;box-shadow:0 14px 40px rgba(239,68,68,.35);border:2px solid rgba(255,255,255,.25);box-sizing:border-box;animation:alertBlink 10s ease-in-out infinite}
+  .alert-wrapper{display:none;align-items:stretch;justify-content:center;gap:24px;width:calc(100% - 16px);max-width:100%;margin:25px auto 18px auto}
+  .alert-card{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;flex:1;min-height:320px;padding:64px 24px;border-radius:24px;background:linear-gradient(135deg,#b91c1c 0%,#ef4444 35%,#f59e0b 70%,#facc15 100%);background-size:200% 200%;color:#fff;box-shadow:0 14px 40px rgba(239,68,68,.35);border:2px solid rgba(255,255,255,.25);box-sizing:border-box;animation:alertBlink 10s ease-in-out infinite}
   .alert-card strong{font-size:68px;font-weight:800;letter-spacing:.2px}
   .alert-card span{font-size:58px;font-weight:700;opacity:.98}
-  .alert-image{width:220px;height:auto;border-radius:20px;object-fit:cover;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+  .alert-image{display:block;width:auto;max-width:220px;height:320px;border-radius:20px;object-fit:cover;box-shadow:0 12px 30px rgba(0,0,0,.35)}
   @keyframes alertBlink{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
   .ring{position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;filter:blur(0.2px);opacity:.12}
   .libre{background:var(--ok)}
@@ -70,8 +70,8 @@ const ROOM_ORDER = [
   'Quirófano',
   'Consultorio Adulto',
   'Consultorio Pediatría',
-  'Sala de Debriefing A-B',
-  'Sala de Debriefing C-D'
+  'Sala de Debriefing A',
+  'Sala de Debriefing B'
 ];
 
 const ROOM_DEFINITIONS = ROOM_ORDER.map((name) => ({
@@ -98,8 +98,8 @@ function stateLabel(room) {
 
 function roomDisplayName(name) {
   const normalized = (name || '').toString().trim().toLowerCase();
-  if (['sala de debriefing 1', 'sala 1', '1', 'debriefing 1', 'debriefing a-b'].includes(normalized)) return 'Sala de Debriefing A-B';
-  if (['sala de debriefing 2', 'sala 2', '2', 'debriefing 2', 'debriefing c-d'].includes(normalized)) return 'Sala de Debriefing C-D';
+  if (['sala de debriefing 1', 'sala 1', '1', 'debriefing 1', 'debriefing a'].includes(normalized)) return 'Sala de Debriefing A';
+  if (['sala de debriefing 2', 'sala 2', '2', 'debriefing 2', 'debriefing b'].includes(normalized)) return 'Sala de Debriefing B';
   return name;
 }
 
