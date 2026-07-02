@@ -14,21 +14,23 @@
   .brand h1{font-size:30px;margin:0;font-weight:800;letter-spacing:.2px}
   .clock{font-weight:800;font-size:30px;color:var(--accent)}
   .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:18px}
-  .card{position:relative;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow),0 10px 24px rgba(255,255,255,0.08);padding:18px;min-height:216px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease;}
-  .card:hover{transform:translateY(-2px);box-shadow:var(--shadow),0 14px 28px rgba(255,255,255,0.12);}
-  .name{font-size:64px;font-weight:600;font-family:'Roboto Condensed',sans-serif;letter-spacing:.3px;margin:0 0 4px 0}
-  .meta{display:flex;align-items:center;gap:10px;color:var(--muted);font-weight:600}
+  .card{position:relative;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow),0 10px 24px rgba(255,255,255,0.08);padding:18px;min-height:216px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease}
+  .card:hover{transform:translateY(-2px);box-shadow:var(--shadow),0 14px 28px rgba(255,255,255,0.12)}
+  .name{font-size:69px;font-weight:600;font-family:'Roboto Condensed',sans-serif;letter-spacing:.3px;margin:0 0 4px 0}
   .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;font-weight:800;font-size:14px;color:white}
   .pill svg{width:16px;height:16px}
   .time{font-size:15px;color:var(--muted);margin-top:2px}
   .foot{display:flex;justify-content:flex-start;align-items:flex-end;margin-top:auto}
   .next{font-size:15px;color:#e2e8f0;background:#1e293b;border:1px solid #334155;padding:6px 10px;border-radius:10px;font-weight:600}
-  .alert-card{display:none;align-items:center;justify-content:center;flex-direction:column;gap:8px;width:calc(100% - 16px);max-width:100%;margin:25px auto 18px auto;padding:64px 24px;border-radius:24px;background:linear-gradient(135deg,#b91c1c,#ef4444);color:#fff;box-shadow:0 14px 40px rgba(239,68,68,.35);border:2px solid rgba(255,255,255,.25);box-sizing:border-box;animation:alertBlink 2.4s ease-in-out infinite alternate}
-  .alert-card strong{font-size:58px;font-weight:800;letter-spacing:.2px}
-  .alert-card span{font-size:48px;font-weight:700;opacity:.98}
-  @keyframes alertBlink{0%{background:linear-gradient(135deg,#b91c1c,#ef4444);transform:scale(1)}25%{background:linear-gradient(135deg,#ef4444,#ff1f1f);transform:scale(1.008)}50%{background:linear-gradient(135deg,#b91c1c,#ef4444);transform:scale(1)}75%{background:linear-gradient(135deg,#ef4444,#ff1f1f);transform:scale(1.008)}100%{background:linear-gradient(135deg,#b91c1c,#ef4444);transform:scale(1)}}
-  .ring{position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;filter:blur(0.2px);opacity:.12;}
-  .libre{background:var(--ok)} .ocupada,.debrief{background:var(--busy)}
+  .alert-wrapper{display:none;align-items:center;justify-content:center;gap:24px;width:calc(100% - 16px);max-width:100%;margin:25px auto 18px auto}
+  .alert-card{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;flex:1;padding:64px 24px;border-radius:24px;background:linear-gradient(135deg,#b91c1c 0%,#ef4444 35%,#f59e0b 70%,#facc15 100%);background-size:200% 200%;color:#fff;box-shadow:0 14px 40px rgba(239,68,68,.35);border:2px solid rgba(255,255,255,.25);box-sizing:border-box;animation:alertBlink 10s ease-in-out infinite}
+  .alert-card strong{font-size:68px;font-weight:800;letter-spacing:.2px}
+  .alert-card span{font-size:58px;font-weight:700;opacity:.98}
+  .alert-image{width:220px;height:auto;border-radius:20px;object-fit:cover;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+  @keyframes alertBlink{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+  .ring{position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;filter:blur(0.2px);opacity:.12}
+  .libre{background:var(--ok)}
+  .ocupada,.debrief{background:var(--busy)}
   .pulse{animation:pulse 2.2s ease-in-out infinite}
   @keyframes pulse{0%{transform:scale(1);opacity:.18}50%{transform:scale(1.08);opacity:.10}100%{transform:scale(1);opacity:.18}}
   @media (max-width:1400px){ .grid{grid-template-columns:repeat(3,1fr);} }
@@ -50,9 +52,12 @@
     <div class="clock" id="clock"></div>
   </header>
   <section class="grid" id="grid"></section>
-  <div class="alert-card" id="alertCard" style="display:none">
-    <strong>Mantenga silencio</strong>
-    <span>simulcion en curso</span>
+  <div class="alert-wrapper" id="alertWrapper" style="display:none">
+    <div class="alert-card" id="alertCard">
+      <strong>Mantenga silencio</strong>
+      <span>simulcion en curso</span>
+    </div>
+    <img class="alert-image" src="enfermera.png" alt="Enfermera" />
   </div>
 </div>
 
@@ -74,6 +79,10 @@ const ROOM_DEFINITIONS = ROOM_ORDER.map((name) => ({
   type: name.includes('Debriefing') ? 'debrief' : 'room',
   state: 'libre'
 }));
+
+const grid = document.getElementById('grid');
+const alertCard = document.getElementById('alertCard');
+const clock = document.getElementById('clock');
 
 let roomsData = ROOM_DEFINITIONS.map((room) => ({ ...room }));
 
@@ -119,7 +128,6 @@ function getCardStyle(roomState) {
 
 function render() {
   const now = new Date();
-  const grid = document.getElementById('grid');
   grid.innerHTML = '';
   let anyBusy = false;
 
@@ -147,13 +155,13 @@ function render() {
     grid.appendChild(card);
   });
 
-  document.getElementById('alertCard').style.display = anyBusy ? 'flex' : 'none';
-  document.getElementById('clock').textContent = now.toLocaleTimeString();
+  alertWrapper.style.display = anyBusy ? 'flex' : 'none';
+  clock.textContent = now.toLocaleTimeString();
 }
 
 render();
 setInterval(() => {
-  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+  clock.textContent = new Date().toLocaleTimeString();
 }, 1000);
 </script>
 </body>
