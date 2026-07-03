@@ -39,15 +39,42 @@
   body{
     font-family:var(--font-body);
     color:var(--ink);
+    position:relative;
     background:
       radial-gradient(1100px 620px at 8% -10%, rgba(91,141,239,.10), transparent 55%),
       radial-gradient(900px 700px at 105% 10%, rgba(45,212,191,.06), transparent 60%),
+      radial-gradient(800px 560px at 20% 115%, rgba(180,83,9,.05), transparent 60%),
+      radial-gradient(700px 500px at 90% 100%, rgba(91,141,239,.05), transparent 60%),
       var(--bg);
     background-attachment:fixed;
   }
   body.cursor-hidden{cursor:none;}
 
-  .wrap{max-width:1920px;margin:0 auto;padding:36px 48px 44px;}
+  /* Sutil textura de puntos + líneas en el fondo */
+  body::before{
+    content:"";
+    position:fixed;inset:0;
+    z-index:0;pointer-events:none;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, transparent 0);
+    background-size:36px 36px;
+    -webkit-mask-image:radial-gradient(1400px 900px at 50% 0%, #000 0%, transparent 78%);
+    mask-image:radial-gradient(1400px 900px at 50% 0%, #000 0%, transparent 78%);
+    opacity:.6;
+  }
+  body::after{
+    content:"";
+    position:fixed;inset:0;
+    z-index:0;pointer-events:none;
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size:120px 120px;
+    -webkit-mask-image:radial-gradient(1200px 800px at 50% 10%, #000 0%, transparent 70%);
+    mask-image:radial-gradient(1200px 800px at 50% 10%, #000 0%, transparent 70%);
+  }
+
+  .wrap{max-width:1920px;margin:0 auto;padding:36px 48px 44px;position:relative;z-index:1;}
 
   /* ---------- Header ---------- */
   header{
@@ -131,6 +158,36 @@
   .card:focus-visible{
     outline:2px solid #fff;
     outline-offset:3px;
+  }
+
+  /* Barrido de luz sutil y periódico */
+  .card-sheen{
+    position:absolute;inset:0;z-index:0;pointer-events:none;
+    overflow:hidden;
+    border-radius:inherit;
+  }
+  .card-sheen::before{
+    content:"";position:absolute;top:-40%;bottom:-40%;left:-60%;width:35%;
+    background:linear-gradient(75deg,
+      rgba(255,255,255,0) 0%,
+      rgba(255,255,255,.22) 45%,
+      rgba(255,255,255,.32) 50%,
+      rgba(255,255,255,.22) 55%,
+      rgba(255,255,255,0) 100%);
+    transform:skewX(-18deg);
+    animation:cardSheenSweep 40s ease-in-out infinite;
+    mix-blend-mode:screen;
+  }
+  .card:nth-child(2) .card-sheen::before{animation-delay:5s;}
+  .card:nth-child(3) .card-sheen::before{animation-delay:10s;}
+  .card:nth-child(4) .card-sheen::before{animation-delay:15s;}
+  .card:nth-child(5) .card-sheen::before{animation-delay:20s;}
+  .card:nth-child(6) .card-sheen::before{animation-delay:25s;}
+  .card:nth-child(7) .card-sheen::before{animation-delay:30s;}
+  .card:nth-child(8) .card-sheen::before{animation-delay:35s;}
+  @keyframes cardSheenSweep{
+    0%,12%{left:-60%;}
+    38%,100%{left:130%;}
   }
 
   .card-top{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;}
@@ -227,7 +284,7 @@
   }
   .pill svg{width:9px;height:9px;flex-shrink:0;color:#fff;}
 
-  .foot{margin-top:auto;}
+  .foot{margin-top:auto;position:relative;z-index:1;}
 
   /* ---------- Alert banner ---------- */
   .alert-wrapper{
@@ -308,7 +365,7 @@
   }
   .alert-card span.sub{font-family:var(--font-body);font-size:22px;color:rgba(255,255,255,.92);font-weight:500;}
   .alert-image-frame{
-    align-self:center;
+    align-self:stretch;
     padding:10px;
     border-radius:22px;
     background:linear-gradient(155deg, rgba(255,255,255,.40), rgba(255,255,255,.08));
@@ -320,7 +377,7 @@
   }
   .alert-image{
     display:block;
-    width:150px;height:auto;max-height:200px;
+    width:150px;height:100%;
     border-radius:14px;object-fit:cover;
     border:1px solid rgba(255,255,255,.3);
   }
@@ -333,7 +390,8 @@
     header{flex-direction:column;align-items:flex-start;gap:14px;}
     .clock{text-align:left;}
     .alert-wrapper{flex-direction:column;}
-    .alert-image{align-self:flex-start;}
+    .alert-image-frame{align-self:flex-start;}
+    .alert-image{height:auto;max-height:200px;}
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -343,6 +401,7 @@
     .alert-card::after{animation:none;}
     .name.beat{animation:none;}
     .alert-card strong{animation:none;}
+    .card-sheen::before{animation:none;display:none;}
   }
 </style>
 </head>
@@ -501,6 +560,7 @@ function render() {
     });
 
     card.innerHTML = `
+      <div class="card-sheen"></div>
       <div class="card-top">
         <span class="eyebrow"><span class="code">${code}</span> ${eyebrowLabel(room)}</span>
         <span class="led ${roomState !== 'libre' ? 'pulse' : ''}"></span>
