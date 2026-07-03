@@ -96,7 +96,7 @@
     border-radius:var(--radius);
     padding:24px 26px 22px;
     min-height:200px;
-    display:flex;flex-direction:column;justify-content:space-between;
+    display:flex;flex-direction:column;justify-content:flex-start;
     overflow:hidden;cursor:pointer;
     isolation:isolate;
     box-shadow:
@@ -164,6 +164,8 @@
     font-family:var(--font-display);
     font-size:60px;font-weight:600;line-height:1.12;
     letter-spacing:.1px;margin:14px 0 0 0;color:#fff;
+    align-self:flex-start;
+    text-align:left;
     position:relative;z-index:1;
     -webkit-text-stroke:1px rgba(0,0,0,.55);
     paint-order:stroke fill;
@@ -224,6 +226,8 @@
     -webkit-backdrop-filter:blur(6px);
   }
   .pill svg{width:9px;height:9px;flex-shrink:0;color:#fff;}
+
+  .foot{margin-top:auto;}
 
   /* ---------- Alert banner ---------- */
   .alert-wrapper{
@@ -322,7 +326,7 @@
   }
 
   @media (max-width:1400px){ .grid{grid-template-columns:repeat(3,1fr);} }
-  @media (max-width:1000px){ .grid{grid-template-columns:repeat(2,1fr);} .name{font-size:52px;} }
+  @media (max-width:1000px){ .grid{grid-template-columns:repeat(2,1fr);} .name{font-size:26px;} }
   @media (max-width:700px){
     .wrap{padding:24px 20px;}
     .grid{grid-template-columns:1fr;}
