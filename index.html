@@ -507,7 +507,7 @@
       </button>
       <div class="brand-text">
         <h1>Centro de Simulación</h1>
-        <span>Panel de estado de salas - version 0.9</span>
+        <span>Panel de estado de salas - version 0.9.1</span>
       </div>
     </div>
     <div class="clock">
@@ -560,6 +560,7 @@ const dateText = document.getElementById('dateText');
 
 const MODE_IMAGE_DIR = 'extra/';
 const MODE_MANIFEST_PATH = `${MODE_IMAGE_DIR}manifest.json`;
+const MODE_IMAGE_INTERVAL = 30000;
 
 let roomsData = ROOM_DEFINITIONS.map((room) => ({ ...room }));
 let modeActive = false;
@@ -603,7 +604,7 @@ async function loadModeAssetManifest() {
 async function loadCaptionFor(imageFileName) {
   const base = imageFileName.replace(/\.[^./]+$/, '');
   try {
-    const response = await fetch(`${MODE_IMAGE_DIR}${base}.txt?t=${Date.now()}`, { cache: 'no-store' });
+    const response = await fetch(`${MODE_IMAGE_DIR}${encodeURIComponent(base)}.txt?t=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return (await response.text()).trim();
   } catch (error) {
@@ -616,12 +617,21 @@ async function setAlertAsset(imageFileName) {
   if (!alertImage) return;
   const caption = await loadCaptionFor(imageFileName);
   const title = imageFileName.replace(/\.[^./]+$/, '');
-  alertImage.style.opacity = '0';
-  setTimeout(() => {
-    alertImage.src = `${MODE_IMAGE_DIR}${imageFileName}`;
-    if (alertCaption) alertCaption.innerHTML = captionTextToHtml(title, caption);
-    alertImage.style.opacity = '1';
-  }, 600);
+  const imageUrl = `${MODE_IMAGE_DIR}${encodeURIComponent(imageFileName)}`;
+  const nextImage = new Image();
+  nextImage.onload = () => {
+    alertImage.style.opacity = '0';
+    setTimeout(() => {
+      if (!modeActive) return;
+      alertImage.src = imageUrl;
+      if (alertCaption) alertCaption.innerHTML = captionTextToHtml(title, caption);
+      alertImage.style.opacity = '1';
+    }, 600);
+  };
+  nextImage.onerror = () => {
+    console.warn(`No se pudo cargar la imagen "${imageFileName}".`);
+  };
+  nextImage.src = imageUrl;
 }
 
 function rotateModeImage() {
@@ -635,7 +645,7 @@ function startModeImageRotation() {
   modeImageIndex = 0;
   setAlertAsset(modeAssets[modeImageIndex]);
   clearInterval(modeImageTimer);
-  modeImageTimer = setInterval(rotateModeImage, 30000);
+  modeImageTimer = setInterval(rotateModeImage, MODE_IMAGE_INTERVAL);
 }
 
 function stopModeImageRotation() {
