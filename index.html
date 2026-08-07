@@ -301,6 +301,7 @@
     width:100%;
   }
   .alert-wrapper.mode-active{
+    display:flex;
     width:100%;
     max-width:100%;
     margin-left:0;
@@ -507,7 +508,7 @@
       </button>
       <div class="brand-text">
         <h1>Centro de Simulación</h1>
-        <span>Panel de estado de salas - version 0.9.1</span>
+        <span>Panel de estado de salas - version 0.2</span>
       </div>
     </div>
     <div class="clock">
@@ -604,7 +605,7 @@ async function loadModeAssetManifest() {
 async function loadCaptionFor(imageFileName) {
   const base = imageFileName.replace(/\.[^./]+$/, '');
   try {
-    const response = await fetch(`${MODE_IMAGE_DIR}${encodeURIComponent(base)}.txt?t=${Date.now()}`, { cache: 'no-store' });
+    const response = await fetch(`${MODE_IMAGE_DIR}${encodeURIComponent(base)}.txt`, { cache: 'no-cache' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return (await response.text()).trim();
   } catch (error) {
