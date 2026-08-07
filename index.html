@@ -406,15 +406,58 @@
     border:1px solid rgba(255,255,255,.3);
     transition:opacity .6s ease;
   }
+  .alert-image-frame{
+    align-self:flex-start;
+    padding:10px;
+    border-radius:22px;
+    background:linear-gradient(155deg, rgba(255,255,255,.40), rgba(255,255,255,.08));
+    border:1px solid rgba(255,255,255,.45);
+    box-shadow:
+      0 14px 30px rgba(0,0,0,.4),
+      inset 0 1px 0 rgba(255,255,255,.5),
+      inset 0 0 0 1px rgba(255,255,255,.08);
+    display:flex;
+    gap:18px;
+    align-items:center;
+    max-height:320px;
+  }
+  .alert-image{
+    display:block;
+    width:220px;
+    height:auto;
+    border-radius:14px;object-fit:cover;
+    border:1px solid rgba(255,255,255,.3);
+    transition:opacity .6s ease;
+  }
   .alert-caption{
+    display:flex;
+    flex-direction:column;
     flex:1;
+    min-height:0;
     color:rgba(255,255,255,.92);
     font-family:var(--font-body);
     font-size:18px;
     line-height:1.6;
-    max-width:560px;
+    max-width:260px;
+    overflow:hidden;
   }
-  .alert-caption p{
+  .alert-caption-title{
+    margin:0 0 .6em;
+    font-size:20px;
+    flex:0 0 auto;
+  }
+  .alert-caption-title strong{
+    display:block;
+    font-weight:700;
+  }
+  .alert-caption-body{
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    scroll-behavior:smooth;
+    padding-right:4px;
+  }
+  .alert-caption-body p{
     margin:0 0 .8em;
   }
 
@@ -508,18 +551,9 @@ const dateText = document.getElementById('dateText');
 const MODE_IMAGE_DIR = 'extra/';
 const MODE_MANIFEST_PATH = 'extra/manifest.json';
 const MODE_FALLBACK_ASSETS = [
-  {
-    image: 'Bernardo Houssay.png',
-    caption: 'Bernardo Houssay\n\nPrimer latinoamericano en obtener el Premio Nobel de Fisiología o Medicina (1947). Sus investigaciones sobre la regulación hormonal del metabolismo revolucionaron la endocrinología.'
-  },
-  {
-    image: 'Cecilia Grierson.png',
-    caption: 'Cecilia Grierson (1859–1934)\n\nFue la primera mujer en graduarse como médica en Argentina (1889). Fundó la primera escuela de enfermería del país y promovió la profesionalización de la asistencia sanitaria. Fue una destacada defensora de los derechos civiles y educativos de las mujeres.'
-  },
-  {
-    image: 'César Milstein.jpeg',
-    caption: 'César Milstein\n\nRecibió el Premio Nobel de Medicina en 1984 por el desarrollo de los anticuerpos monoclonales.'
-  }
+  'Bernardo Houssay.png',
+  'Cecilia Grierson.png',
+  'César Milstein.jpeg'
 ];
 
 let roomsData = ROOM_DEFINITIONS.map((room) => ({ ...room }));
@@ -528,23 +562,31 @@ let modeAssets = [];
 let modeImageIndex = 0;
 let modeImageTimer = null;
 
-function captionTextToHtml(text) {
+function captionTextToHtml(title, text) {
   if (!text) return '';
-  return text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => `<p>${line}</p>`)
-    .join('');
+  const paragraphs = text
+    .split(/\n\s*\n/)
+    .map((p) => p.replace(/\n+/g, ' ').trim())
+    .filter(Boolean);
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, (s) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[s]);
+  }
+
+  const titleHtml = title ? `<p class="alert-caption-title"><strong>${escapeHtml(title)}</strong></p>` : '';
+  const bodyHtml = paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join('');
+  return `${titleHtml}<div class="alert-caption-body">${bodyHtml}</div>`;
 }
 
 async function loadModeAssetManifest() {
   try {
-    const response = await fetch(MODE_MANIFEST_PATH);
+    const response = await fetch(`${MODE_MANIFEST_PATH}?t=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     if (Array.isArray(data) && data.length) {
-      modeAssets = data.filter((entry) => entry.image && entry.caption);
+      // Soporta tanto el formato nuevo (["archivo.png", ...])
+      // como el formato viejo ([{ image, caption }, ...]) por compatibilidad.
+      modeAssets = data.map((entry) => (typeof entry === 'string' ? entry : entry.image)).filter(Boolean);
       if (modeAssets.length) return;
     }
   } catch (error) {
@@ -553,12 +595,26 @@ async function loadModeAssetManifest() {
   modeAssets = MODE_FALLBACK_ASSETS;
 }
 
-function setAlertAsset(asset) {
+async function loadCaptionFor(imageFileName) {
+  const base = imageFileName.replace(/\.[^./]+$/, '');
+  try {
+    const response = await fetch(`${MODE_IMAGE_DIR}${base}.txt?t=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return (await response.text()).trim();
+  } catch (error) {
+    console.warn(`No se encontró texto para "${imageFileName}", se usa el nombre de archivo.`, error);
+    return base;
+  }
+}
+
+async function setAlertAsset(imageFileName) {
   if (!alertImage) return;
+  const caption = await loadCaptionFor(imageFileName);
+  const title = imageFileName.replace(/\.[^./]+$/, '');
   alertImage.style.opacity = '0';
   setTimeout(() => {
-    alertImage.src = `${MODE_IMAGE_DIR}${asset.image}`;
-    if (alertCaption) alertCaption.innerHTML = captionTextToHtml(asset.caption);
+    alertImage.src = `${MODE_IMAGE_DIR}${imageFileName}`;
+    if (alertCaption) alertCaption.innerHTML = captionTextToHtml(title, caption);
     alertImage.style.opacity = '1';
   }, 600);
 }
