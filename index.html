@@ -559,7 +559,7 @@ const timeText = document.getElementById('timeText');
 const dateText = document.getElementById('dateText');
 
 const MODE_IMAGE_DIR = 'extra/';
-const MODE_IMAGE_EXTENSIONS = /\.(?:avif|gif|jpe?g|png|webp)$/i;
+const MODE_MANIFEST_PATH = `${MODE_IMAGE_DIR}manifest.json`;
 
 let roomsData = ROOM_DEFINITIONS.map((room) => ({ ...room }));
 let modeActive = false;
@@ -583,27 +583,20 @@ function captionTextToHtml(title, text) {
   return `${titleHtml}<div class="alert-caption-body">${bodyHtml}</div>`;
 }
 
-async function scanModeAssets() {
+async function loadModeAssetManifest() {
   try {
-    const response = await fetch(`${MODE_IMAGE_DIR}?t=${Date.now()}`, { cache: 'no-store' });
+    const response = await fetch(`${MODE_MANIFEST_PATH}?t=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    const manifestAssets = Array.isArray(data)
+      ? data.map((entry) => (typeof entry === 'string' ? entry : entry.image)).filter(Boolean)
+      : [];
 
-    const directoryUrl = new URL(MODE_IMAGE_DIR, window.location.href);
-    const directoryHtml = await response.text();
-    const directoryDocument = new DOMParser().parseFromString(directoryHtml, 'text/html');
-    const scannedAssets = [...directoryDocument.querySelectorAll('a[href]')]
-      .map((link) => new URL(link.getAttribute('href'), directoryUrl))
-      .filter((url) => url.origin === directoryUrl.origin
-        && url.pathname.startsWith(directoryUrl.pathname)
-        && MODE_IMAGE_EXTENSIONS.test(url.pathname))
-      .map((url) => decodeURIComponent(url.pathname.slice(directoryUrl.pathname.length)))
-      .filter((fileName, index, assets) => fileName && assets.indexOf(fileName) === index);
-
-    if (!scannedAssets.length) throw new Error('No se encontraron imágenes en extra/');
-    modeAssets = scannedAssets;
+    if (!manifestAssets.length) throw new Error('El manifiesto no contiene imágenes');
+    modeAssets = manifestAssets;
   } catch (error) {
     modeAssets = [];
-    console.warn('No se pudo escanear la carpeta extra/:', error);
+    console.warn('No se pudo cargar extra/manifest.json:', error);
   }
 }
 
@@ -662,7 +655,7 @@ modeToggle.addEventListener('click', async () => {
   alertWrapper.classList.toggle('mode-active', modeActive);
   modeToggle.setAttribute('aria-pressed', String(modeActive));
   if (modeActive) {
-    await scanModeAssets();
+    await loadModeAssetManifest();
     startModeImageRotation();
   } else {
     stopModeImageRotation();
