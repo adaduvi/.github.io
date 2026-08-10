@@ -55,6 +55,11 @@
       radial-gradient(900px 700px at 105% 10%, rgba(34,139,70,.24), transparent 62%),
       linear-gradient(145deg, #063b25 0%, #0b5a32 52%, #07351f 100%);
   }
+  body.patria-mode{
+    background:
+      linear-gradient(rgba(4,28,24,.28), rgba(4,28,24,.28)),
+      url('fechas_patrias/fondo.webp') center / cover fixed no-repeat;
+  }
 
   .snow-layer{
     position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;display:none;
@@ -144,6 +149,7 @@
   }
   .developer-tools{
     display:none;
+    flex-wrap:wrap;
     margin-top:20px;
     padding:16px 18px;
     border:1px solid rgba(255,77,103,.35);
@@ -166,6 +172,23 @@
   }
   .december-toggle:hover{background:rgba(255,255,255,.18);}
   .december-toggle[aria-pressed="true"]{background:#0b7542;border-color:#72e2a7;}
+  .patria-events{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    flex-basis:100%;
+  }
+  .patria-event-toggle{
+    border:1px solid rgba(255,255,255,.26);
+    border-radius:8px;
+    padding:8px 11px;
+    background:rgba(255,255,255,.08);
+    color:rgba(255,255,255,.9);
+    font:500 12px var(--font-body);
+    cursor:pointer;
+  }
+  .patria-event-toggle:hover{background:rgba(255,255,255,.16);}
+  .patria-event-toggle[aria-pressed="true"]{background:#145c62;border-color:#8be0df;color:#fff;}
   .brand-text span{
     display:block;font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;
     text-transform:uppercase;color:var(--muted);margin-top:3px;
@@ -599,6 +622,18 @@
   <section class="developer-tools" id="developerTools" aria-label="Herramientas de desarrollador">
     <span class="developer-tools-label">Pruebas visuales</span>
     <button class="december-toggle" id="decemberToggle" type="button" aria-pressed="false">Modo diciembre</button>
+    <div class="patria-events" id="patriaEvents" aria-label="Eventos patrios">
+      <button class="patria-event-toggle" type="button" data-event-date="24 de marzo" aria-pressed="false">24 de marzo</button>
+      <button class="patria-event-toggle" type="button" data-event-date="2 de abril" aria-pressed="false">2 de abril</button>
+      <button class="patria-event-toggle" type="button" data-event-date="1 de mayo" aria-pressed="false">1 de mayo</button>
+      <button class="patria-event-toggle" type="button" data-event-date="25 de mayo" aria-pressed="false">25 de mayo</button>
+      <button class="patria-event-toggle" type="button" data-event-date="17 de junio" aria-pressed="false">17 de junio</button>
+      <button class="patria-event-toggle" type="button" data-event-date="20 de junio" aria-pressed="false">20 de junio</button>
+      <button class="patria-event-toggle" type="button" data-event-date="9 de julio" aria-pressed="false">9 de julio</button>
+      <button class="patria-event-toggle" type="button" data-event-date="17 de agosto" aria-pressed="false">17 de agosto</button>
+      <button class="patria-event-toggle" type="button" data-event-date="12 de octubre" aria-pressed="false">12 de octubre</button>
+      <button class="patria-event-toggle" type="button" data-event-date="20 de noviembre" aria-pressed="false">20 de noviembre</button>
+    </div>
   </section>
 
   <div class="alert-wrapper mode-active" id="alertWrapper">
@@ -638,6 +673,7 @@ const alertWrapper = document.getElementById('alertWrapper');
 const modeToggle = document.querySelector('.mode-toggle');
 const developerModeIndicator = document.getElementById('developerModeIndicator');
 const decemberToggle = document.getElementById('decemberToggle');
+const patriaEventToggles = [...document.querySelectorAll('.patria-event-toggle')];
 const snowLayer = document.getElementById('snowLayer');
 const alertImage = document.querySelector('.alert-image');
 const alertCaption = document.querySelector('.alert-caption');
@@ -647,6 +683,18 @@ const dateText = document.getElementById('dateText');
 const MODE_IMAGE_DIR = 'extra/';
 const MODE_MANIFEST_PATH = `${MODE_IMAGE_DIR}manifest.json`;
 const MODE_IMAGE_INTERVAL = 30000;
+const PATRIA_EVENTS = [
+  { day: 24, month: 2, label: '24 de marzo' },
+  { day: 2, month: 3, label: '2 de abril' },
+  { day: 1, month: 4, label: '1 de mayo' },
+  { day: 25, month: 4, label: '25 de mayo' },
+  { day: 17, month: 5, label: '17 de junio' },
+  { day: 20, month: 5, label: '20 de junio' },
+  { day: 9, month: 6, label: '9 de julio' },
+  { day: 17, month: 7, label: '17 de agosto' },
+  { day: 12, month: 9, label: '12 de octubre' },
+  { day: 20, month: 10, label: '20 de noviembre' }
+];
 
 let roomsData = ROOM_DEFINITIONS.map((room) => ({ ...room }));
 let modeActive = true;
@@ -654,6 +702,8 @@ let modeAssets = [];
 let modeImageIndex = 0;
 let modeImageTimer = null;
 let decemberMode = false;
+let patriaMode = false;
+let selectedPatriaEvent = null;
 
 function isDecember(date) {
   return date.getMonth() === 11 && date.getDate() >= 1 && date.getDate() <= 31;
@@ -682,6 +732,24 @@ function setDecemberMode(enabled) {
 
 function updateDecemberMode() {
   setDecemberMode(modeActive ? isDecember(new Date()) : decemberMode);
+}
+
+function getPatriaEvent(date) {
+  return PATRIA_EVENTS.find((event) => event.day === date.getDate() && event.month === date.getMonth()) || null;
+}
+
+function setPatriaMode(enabled, event = null) {
+  patriaMode = enabled;
+  document.body.classList.toggle('patria-mode', enabled);
+  patriaEventToggles.forEach((button) => {
+    button.setAttribute('aria-pressed', String(enabled && button.dataset.eventDate === event?.label));
+  });
+}
+
+function updatePatriaMode() {
+  const event = getPatriaEvent(new Date());
+  selectedPatriaEvent = event;
+  setPatriaMode(Boolean(event), event);
 }
 
 function captionTextToHtml(title, text) {
@@ -802,10 +870,13 @@ modeToggle.addEventListener('click', async () => {
   modeToggle.setAttribute('title', nextModeLabel);
   if (modeActive) {
     updateDecemberMode();
+    updatePatriaMode();
     await loadModeAssetManifest();
     startModeImageRotation();
   } else {
     setDecemberMode(decemberMode);
+    selectedPatriaEvent = null;
+    setPatriaMode(false);
     stopModeImageRotation();
   }
 });
@@ -814,11 +885,25 @@ decemberToggle.addEventListener('click', () => {
   if (!modeActive) setDecemberMode(!decemberMode);
 });
 
+patriaEventToggles.forEach((button) => {
+  button.addEventListener('click', () => {
+    if (modeActive) return;
+    const event = PATRIA_EVENTS.find((item) => item.label === button.dataset.eventDate);
+    if (!event) return;
+    selectedPatriaEvent = patriaMode && selectedPatriaEvent?.label === event.label ? null : event;
+    setPatriaMode(Boolean(selectedPatriaEvent), selectedPatriaEvent);
+  });
+});
+
 loadModeAssetManifest().then(startModeImageRotation);
 createSnowflakes();
 updateDecemberMode();
+updatePatriaMode();
 setInterval(() => {
-  if (modeActive) updateDecemberMode();
+  if (modeActive) {
+    updateDecemberMode();
+    updatePatriaMode();
+  }
 }, 60000);
 
 let inactivityTimer;
