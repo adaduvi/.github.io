@@ -918,7 +918,7 @@ function updatePatriaMode() {
   const event = getPatriaEvent(new Date());
   selectedPatriaEvent = event;
   setPatriaMode(Boolean(event), event);
-  if (event?.label === '24 de marzo') setPatriaAsset(event);
+  if (event?.label === '24 de marzo' || event?.label === '2 de abril') setPatriaAsset(event);
 }
 
 function captionTextToHtml(title, text) {
@@ -979,9 +979,14 @@ async function loadCaptionFor(imageFileName) {
 }
 
 async function setPatriaAsset(event) {
-  if (!alertImage || event?.label !== '24 de marzo') return;
+  const imageExtensions = {
+    '24 de marzo': 'webp',
+    '2 de abril': 'jpg'
+  };
+  const imageExtension = imageExtensions[event?.label];
+  if (!alertImage || !imageExtension) return;
   const baseName = encodeURIComponent(event.label);
-  const imageUrl = `fechas_patrias/${baseName}.webp`;
+  const imageUrl = `fechas_patrias/${baseName}.${imageExtension}`;
   let caption = '';
   try {
     const response = await fetch(`fechas_patrias/${baseName}.txt`, { cache: 'no-cache' });
@@ -1092,7 +1097,9 @@ patriaEventToggles.forEach((button) => {
     if (!event) return;
     selectedPatriaEvent = patriaMode && selectedPatriaEvent?.label === event.label ? null : event;
     setPatriaMode(Boolean(selectedPatriaEvent), selectedPatriaEvent);
-    if (selectedPatriaEvent?.label === '24 de marzo') setPatriaAsset(selectedPatriaEvent);
+    if (selectedPatriaEvent?.label === '24 de marzo' || selectedPatriaEvent?.label === '2 de abril') {
+      setPatriaAsset(selectedPatriaEvent);
+    }
   });
 });
 
