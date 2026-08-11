@@ -669,7 +669,7 @@
       </button>
       <div class="brand-text">
         <h1>Centro de Simulación <span class="developer-mode-indicator" id="developerModeIndicator">Modo desarrollador</span></h1>
-        <span>Panel de estado de salas - version 0.2.1</span>
+        <span>Panel de estado de salas - version 0.2.2</span>
       </div>
     </div>
     <div class="clock">
@@ -910,7 +910,7 @@ function setPatriaMode(enabled, event = null) {
   patriaMode = enabled;
   document.body.classList.toggle('patria-mode', enabled);
   patriaEventToggles.forEach((button) => {
-    button.setAttribute('aria-pressed', String(enabled && button.dataset.eventDate === event?.label));
+    button.setAttribute('aria-pressed', String(enabled && button.dataset.eventDate === (event ? event.label : undefined)));
   });
 }
 
@@ -918,7 +918,7 @@ function updatePatriaMode() {
   const event = getPatriaEvent(new Date());
   selectedPatriaEvent = event;
   setPatriaMode(Boolean(event), event);
-  if (event?.label === '24 de marzo' || event?.label === '2 de abril') setPatriaAsset(event);
+  if (event && (event.label === '24 de marzo' || event.label === '2 de abril')) setPatriaAsset(event);
 }
 
 function captionTextToHtml(title, text) {
@@ -983,7 +983,7 @@ async function setPatriaAsset(event) {
     '24 de marzo': 'webp',
     '2 de abril': 'jpg'
   };
-  const imageExtension = imageExtensions[event?.label];
+  const imageExtension = imageExtensions[event ? event.label : undefined];
   if (!alertImage || !imageExtension) return;
   const baseName = encodeURIComponent(event.label);
   const imageUrl = `fechas_patrias/${baseName}.${imageExtension}`;
@@ -999,7 +999,7 @@ async function setPatriaAsset(event) {
   nextImage.onload = () => {
     alertImage.style.opacity = '0';
     setTimeout(() => {
-      if (!patriaMode || selectedPatriaEvent?.label !== event.label) return;
+      if (!patriaMode || !selectedPatriaEvent || selectedPatriaEvent.label !== event.label) return;
       alertImage.src = imageUrl;
       if (alertCaption) {
         alertCaption.innerHTML = captionTextToHtml(event.label, caption);
@@ -1095,9 +1095,9 @@ patriaEventToggles.forEach((button) => {
     if (modeActive) return;
     const event = PATRIA_EVENTS.find((item) => item.label === button.dataset.eventDate);
     if (!event) return;
-    selectedPatriaEvent = patriaMode && selectedPatriaEvent?.label === event.label ? null : event;
+    selectedPatriaEvent = patriaMode && selectedPatriaEvent && selectedPatriaEvent.label === event.label ? null : event;
     setPatriaMode(Boolean(selectedPatriaEvent), selectedPatriaEvent);
-    if (selectedPatriaEvent?.label === '24 de marzo' || selectedPatriaEvent?.label === '2 de abril') {
+    if (selectedPatriaEvent && (selectedPatriaEvent.label === '24 de marzo' || selectedPatriaEvent.label === '2 de abril')) {
       setPatriaAsset(selectedPatriaEvent);
     }
   });
@@ -1178,7 +1178,25 @@ function toggleRoomState(name) {
   render();
 }
 
+function moveRoomFocus(card, key) {
+  const cards = [...grid.querySelectorAll('.card')];
+  const currentIndex = cards.indexOf(card);
+  if (currentIndex < 0) return;
+
+  const columns = Math.max(1, getComputedStyle(grid).gridTemplateColumns.split(' ').length);
+  let nextIndex = currentIndex;
+
+  if (key === 'ArrowLeft') nextIndex = currentIndex > 0 ? currentIndex - 1 : cards.length - 1;
+  if (key === 'ArrowRight') nextIndex = currentIndex < cards.length - 1 ? currentIndex + 1 : 0;
+  if (key === 'ArrowUp') nextIndex = currentIndex >= columns ? currentIndex - columns : currentIndex;
+  if (key === 'ArrowDown') nextIndex = currentIndex + columns < cards.length ? currentIndex + columns : currentIndex;
+
+  if (nextIndex !== currentIndex) cards[nextIndex].focus();
+}
+
 function render() {
+  const activeCard = document.activeElement && document.activeElement.closest('.card');
+  const focusedRoomName = activeCard ? activeCard.dataset.roomName : undefined;
   grid.innerHTML = '';
   let anyBusy = false;
 
@@ -1201,12 +1219,18 @@ function render() {
     card.style.setProperty('--grad-2', g2);
     card.setAttribute('tabindex', '0');
     card.setAttribute('role', 'button');
+    card.dataset.roomName = roomDisplayName(room.name);
     card.setAttribute('aria-pressed', String(roomState !== 'libre'));
     card.addEventListener('click', () => toggleRoomState(room.name));
     card.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         toggleRoomState(room.name);
+        return;
+      }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        moveRoomFocus(card, e.key);
       }
     });
 
@@ -1223,6 +1247,10 @@ function render() {
   });
 
   alertWrapper.style.display = anyBusy ? 'flex' : 'none';
+
+  const nextFocusedCard = [...grid.querySelectorAll('.card')].find((card) => card.dataset.roomName === focusedRoomName);
+  const initialCard = nextFocusedCard || grid.querySelector('.card');
+  if (initialCard) initialCard.focus();
 }
 
 function updateDateTime() {
