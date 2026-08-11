@@ -77,7 +77,7 @@
     z-index:4;
     width:clamp(150px, 18vw, 300px);
     max-width:42vw;
-    aspect-ratio:565 / 318;
+    aspect-ratio:516 / 120;
     height:auto;
     pointer-events:none;
     display:none;
@@ -810,7 +810,7 @@ function emitSleighSpark() {
   const spark = sleighSparks.children[Math.floor(Math.random() * sleighSparks.children.length)];
   if (!spark) return;
   const originX = sleighRect.left + sleighRect.width * (.2 + Math.random() * .6);
-  const originY = sleighRect.bottom - 1;
+  const originY = sleighRect.bottom - 12;
   spark.style.setProperty('--spark-left', `${originX}px`);
   spark.style.setProperty('--spark-top', `${originY}px`);
   spark.style.setProperty('--spark-width', `${1.5 + Math.random() * 2.5}px`);
