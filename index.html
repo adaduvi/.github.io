@@ -49,6 +49,26 @@
     background-attachment:fixed;
   }
   body.cursor-hidden{cursor:none;}
+  body.remote-navigation{cursor:none;}
+  .remote-cursor{
+    position:fixed;
+    z-index:10;
+    width:24px;height:24px;
+    margin:-12px 0 0 -12px;
+    border:2px solid #fff;
+    border-radius:50%;
+    box-shadow:0 0 0 3px rgba(0,0,0,.45),0 0 18px rgba(255,255,255,.75);
+    pointer-events:none;
+    opacity:0;
+    transform:scale(.75);
+    transition:left .18s ease,top .18s ease,opacity .18s ease,transform .18s ease;
+  }
+  .remote-cursor::before,.remote-cursor::after{
+    content:"";position:absolute;background:#fff;opacity:.9;
+  }
+  .remote-cursor::before{width:2px;height:34px;left:9px;top:-7px;}
+  .remote-cursor::after{width:34px;height:2px;left:-7px;top:9px;}
+  body.remote-navigation .remote-cursor{opacity:1;transform:scale(1);}
   body.december-mode{
     background:
       radial-gradient(1000px 600px at 8% -10%, rgba(92,184,92,.22), transparent 58%),
@@ -652,6 +672,7 @@
 </style>
 </head>
 <body>
+<div class="remote-cursor" id="remoteCursor" aria-hidden="true"></div>
 <div class="snow-layer" id="snowLayer" aria-hidden="true"></div>
 <div class="sleigh-sparks" id="sleighSparks" aria-hidden="true"></div>
 <div class="santa-sleigh" id="santaSleigh" aria-hidden="true">
@@ -742,6 +763,7 @@ const alertImage = document.querySelector('.alert-image');
 const alertCaption = document.querySelector('.alert-caption');
 const timeText = document.getElementById('timeText');
 const dateText = document.getElementById('dateText');
+const remoteCursor = document.getElementById('remoteCursor');
 
 const MODE_IMAGE_DIR = 'extra/';
 const MODE_MANIFEST_PATH = `${MODE_IMAGE_DIR}manifest.json`;
@@ -1128,7 +1150,12 @@ const resetCursorTimer = () => {
 };
 
 ['mousemove', 'keydown', 'touchstart', 'click'].forEach((eventName) => {
-  document.addEventListener(eventName, resetCursorTimer, { passive: true });
+  document.addEventListener(eventName, (event) => {
+    resetCursorTimer();
+    if (eventName !== 'keydown' && remoteCursor) {
+      document.body.classList.remove('remote-navigation');
+    }
+  }, { passive: true });
 });
 
 resetCursorTimer();
@@ -1191,7 +1218,18 @@ function moveRoomFocus(card, key) {
   if (key === 'ArrowUp') nextIndex = currentIndex >= columns ? currentIndex - columns : currentIndex;
   if (key === 'ArrowDown') nextIndex = currentIndex + columns < cards.length ? currentIndex + columns : currentIndex;
 
-  if (nextIndex !== currentIndex) cards[nextIndex].focus();
+  if (nextIndex !== currentIndex) {
+    cards[nextIndex].focus();
+    moveRemoteCursor(cards[nextIndex]);
+  }
+}
+
+function moveRemoteCursor(card) {
+  if (!remoteCursor || !card) return;
+  const rect = card.getBoundingClientRect();
+  remoteCursor.style.left = `${rect.left + rect.width / 2}px`;
+  remoteCursor.style.top = `${rect.top + rect.height / 2}px`;
+  document.body.classList.add('remote-navigation');
 }
 
 function render() {
@@ -1250,7 +1288,10 @@ function render() {
 
   const nextFocusedCard = [...grid.querySelectorAll('.card')].find((card) => card.dataset.roomName === focusedRoomName);
   const initialCard = nextFocusedCard || grid.querySelector('.card');
-  if (initialCard) initialCard.focus();
+  if (initialCard) {
+    initialCard.focus();
+    moveRemoteCursor(initialCard);
+  }
 }
 
 function updateDateTime() {
