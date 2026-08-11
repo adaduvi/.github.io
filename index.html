@@ -306,7 +306,10 @@
       inset 0 0 60px rgba(255,255,255,.07);
     filter:brightness(1.04);
   }
-  .card:focus-visible{
+  .card:focus{
+    outline:none;
+  }
+  body.keyboard-navigation .card:focus{
     outline:2px solid #fff;
     outline-offset:3px;
   }
@@ -615,7 +618,7 @@
     padding-right:4px;
   }
   .alert-caption-scroll{
-    animation:captionScroll var(--caption-scroll-duration, 24s) ease-in-out infinite alternate;
+    animation:captionScroll var(--caption-scroll-duration, 24s) ease-in-out 1 forwards;
   }
   @keyframes captionScroll{
     from{transform:translateY(0);}
@@ -745,7 +748,7 @@ const dateText = document.getElementById('dateText');
 
 const MODE_IMAGE_DIR = 'extra/';
 const MODE_MANIFEST_PATH = `${MODE_IMAGE_DIR}manifest.json`;
-const MODE_IMAGE_INTERVAL = 30000;
+const MODE_IMAGE_PAUSE = 10000;
 const PATRIA_EVENTS = [
   { day: 24, month: 2, label: '24 de marzo' },
   { day: 2, month: 3, label: '2 de abril' },
@@ -938,24 +941,29 @@ function captionTextToHtml(title, text) {
 }
 
 function prepareCaptionScroll() {
-  if (!alertCaption) return;
+  if (!alertCaption) return 0;
   const body = alertCaption.querySelector('.alert-caption-body');
   const scrollContent = alertCaption.querySelector('.alert-caption-scroll');
-  if (!body || !scrollContent) return;
+  if (!body || !scrollContent) return 0;
 
   const distance = Math.max(0, scrollContent.scrollHeight - body.clientHeight);
+  const duration = Math.max(18, distance * 0.12);
   scrollContent.style.setProperty('--caption-scroll-distance', `${-distance}px`);
-  scrollContent.style.setProperty('--caption-scroll-duration', `${Math.max(18, distance * 0.12)}s`);
+  scrollContent.style.setProperty('--caption-scroll-duration', `${duration}s`);
   scrollContent.style.animationPlayState = distance > 0 ? 'running' : 'paused';
+  return distance > 0 ? duration * 1000 : 0;
 }
 
-function scheduleCaptionScroll() {
+function scheduleCaptionScroll(onReady) {
+  const notifyReady = () => {
+    if (onReady) onReady(prepareCaptionScroll());
+  };
   requestAnimationFrame(() => {
-    prepareCaptionScroll();
-    requestAnimationFrame(prepareCaptionScroll);
+    notifyReady();
+    requestAnimationFrame(notifyReady);
   });
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(prepareCaptionScroll);
-  setTimeout(prepareCaptionScroll, 300);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(notifyReady);
+  setTimeout(notifyReady, 300);
 }
 
 async function loadModeAssetManifest() {
@@ -1036,7 +1044,9 @@ async function setAlertAsset(imageFileName) {
       alertImage.src = imageUrl;
       if (alertCaption) {
         alertCaption.innerHTML = captionTextToHtml(title, caption);
-        scheduleCaptionScroll();
+        scheduleCaptionScroll((scrollDuration) => {
+          scheduleModeImageRotation(scrollDuration);
+        });
       }
       alertImage.style.opacity = '1';
     }, 600);
@@ -1053,16 +1063,20 @@ function rotateModeImage() {
   setAlertAsset(modeAssets[modeImageIndex]);
 }
 
+function scheduleModeImageRotation(scrollDuration) {
+  clearTimeout(modeImageTimer);
+  if (!modeActive || modeAssets.length <= 1) return;
+  modeImageTimer = setTimeout(rotateModeImage, scrollDuration + MODE_IMAGE_PAUSE);
+}
+
 function startModeImageRotation() {
   if (!alertImage || modeAssets.length === 0) return;
   modeImageIndex = 0;
   setAlertAsset(modeAssets[modeImageIndex]);
-  clearInterval(modeImageTimer);
-  modeImageTimer = setInterval(rotateModeImage, MODE_IMAGE_INTERVAL);
 }
 
 function stopModeImageRotation() {
-  clearInterval(modeImageTimer);
+  clearTimeout(modeImageTimer);
   modeImageTimer = null;
   if (!alertImage) return;
   alertImage.style.opacity = '0';
@@ -1242,6 +1256,7 @@ function render() {
       }
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault();
+        document.body.classList.add('keyboard-navigation');
         moveRoomFocus(card, e.key);
       }
     });
