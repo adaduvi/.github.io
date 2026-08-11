@@ -918,6 +918,7 @@ function updatePatriaMode() {
   const event = getPatriaEvent(new Date());
   selectedPatriaEvent = event;
   setPatriaMode(Boolean(event), event);
+  if (event?.label === '24 de marzo') setPatriaAsset(event);
 }
 
 function captionTextToHtml(title, text) {
@@ -975,6 +976,37 @@ async function loadCaptionFor(imageFileName) {
     console.warn(`No se encontró texto para "${imageFileName}", se usa el nombre de archivo.`, error);
     return base;
   }
+}
+
+async function setPatriaAsset(event) {
+  if (!alertImage || event?.label !== '24 de marzo') return;
+  const baseName = encodeURIComponent(event.label);
+  const imageUrl = `fechas_patrias/${baseName}.webp`;
+  let caption = '';
+  try {
+    const response = await fetch(`fechas_patrias/${baseName}.txt`, { cache: 'no-cache' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    caption = (await response.text()).trim();
+  } catch (error) {
+    console.warn(`No se pudo cargar el texto de fechas_patrias/${event.label}.txt`, error);
+  }
+  const nextImage = new Image();
+  nextImage.onload = () => {
+    alertImage.style.opacity = '0';
+    setTimeout(() => {
+      if (!patriaMode || selectedPatriaEvent?.label !== event.label) return;
+      alertImage.src = imageUrl;
+      if (alertCaption) {
+        alertCaption.innerHTML = captionTextToHtml(event.label, caption);
+        requestAnimationFrame(prepareCaptionScroll);
+      }
+      alertImage.style.opacity = '1';
+    }, 600);
+  };
+  nextImage.onerror = () => {
+    console.warn(`No se pudo cargar la imagen ${imageUrl}.`);
+  };
+  nextImage.src = imageUrl;
 }
 
 async function setAlertAsset(imageFileName) {
@@ -1060,6 +1092,7 @@ patriaEventToggles.forEach((button) => {
     if (!event) return;
     selectedPatriaEvent = patriaMode && selectedPatriaEvent?.label === event.label ? null : event;
     setPatriaMode(Boolean(selectedPatriaEvent), selectedPatriaEvent);
+    if (selectedPatriaEvent?.label === '24 de marzo') setPatriaAsset(selectedPatriaEvent);
   });
 });
 
