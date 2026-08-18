@@ -672,7 +672,7 @@
       </button>
       <div class="brand-text">
         <h1>Centro de Simulación <span class="developer-mode-indicator" id="developerModeIndicator">Modo desarrollador</span></h1>
-        <span>Panel de estado de salas - version 0.2.4</span>
+        <span>Panel de estado de salas - version 0.2.5</span>
       </div>
     </div>
     <div class="clock">
@@ -923,7 +923,8 @@ function updatePatriaBackground(event) {
     return;
   }
   const backgroundMap = {
-    '25 de mayo': 'fechas_patrias/25%20de%20mayo%20-%20fondo.jpg'
+    '25 de mayo': 'fechas_patrias/25%20de%20mayo%20-%20fondo.jpg',
+    '17 de junio': 'fechas_patrias/17%20de%20junio%20-%20fondo.png'
   };
   const backgroundUrl = backgroundMap[event.label];
   if (backgroundUrl) {
@@ -935,7 +936,7 @@ function updatePatriaMode() {
   const event = getPatriaEvent(new Date());
   selectedPatriaEvent = event;
   setPatriaMode(Boolean(event), event);
-  if (event && (event.label === '24 de marzo' || event.label === '2 de abril' || event.label === '25 de mayo')) {
+  if (event && (event.label === '24 de marzo' || event.label === '2 de abril' || event.label === '25 de mayo' || event.label === '17 de junio')) {
     setPatriaAsset(event);
     updatePatriaBackground(event);
   }
@@ -1023,7 +1024,8 @@ async function setPatriaAsset(event) {
   const imageExtensions = {
     '24 de marzo': 'webp',
     '2 de abril': 'jpg',
-    '25 de mayo': 'jpg'
+    '25 de mayo': 'jpg',
+    '17 de junio': 'jpg'
   };
   const imageExtension = imageExtensions[event ? event.label : undefined];
   if (!alertImage || !imageExtension) return;
@@ -1146,7 +1148,7 @@ patriaEventToggles.forEach((button) => {
     if (!event) return;
     selectedPatriaEvent = patriaMode && selectedPatriaEvent && selectedPatriaEvent.label === event.label ? null : event;
     setPatriaMode(Boolean(selectedPatriaEvent), selectedPatriaEvent);
-    if (selectedPatriaEvent && (selectedPatriaEvent.label === '24 de marzo' || selectedPatriaEvent.label === '2 de abril' || selectedPatriaEvent.label === '25 de mayo')) {
+    if (selectedPatriaEvent && (selectedPatriaEvent.label === '24 de marzo' || selectedPatriaEvent.label === '2 de abril' || selectedPatriaEvent.label === '25 de mayo' || selectedPatriaEvent.label === '17 de junio')) {
       setPatriaAsset(selectedPatriaEvent);
       updatePatriaBackground(selectedPatriaEvent);
     } else if (!selectedPatriaEvent) {
