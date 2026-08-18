@@ -474,13 +474,13 @@
     content:"";position:absolute;inset:0;z-index:0;
   }
   .alert-card::before{
-    background:linear-gradient(135deg,var(--ocupada-1) 0%,var(--ocupada-2) 100%);
-    animation:alertFadeRed 120s ease-in-out infinite;
+    background:#ff0014;
+    animation:alertFadeRed 60s ease-in-out infinite;
   }
   .alert-card::after{
-    background:linear-gradient(135deg,var(--debrief-1) 0%,var(--debrief-2) 100%);
+    background:#ffdd00;
     opacity:0;
-    animation:alertFadeAmber 120s ease-in-out infinite;
+    animation:alertFadeAmber 60s ease-in-out infinite;
   }
   @keyframes alertFadeRed{
     0%{opacity:1;} 50%{opacity:0;} 100%{opacity:1;}
@@ -511,7 +511,7 @@
          2px -2px 0 rgba(0,0,0,.45),
         -2px  2px 0 rgba(0,0,0,.45),
          2px  2px 0 rgba(0,0,0,.45),
-         0 0 16px rgba(255,205,0,.95);
+         0 0 24px rgba(0,0,0,1);
     }
     9%{
       text-shadow:
@@ -519,7 +519,7 @@
          2px -2px 0 rgba(0,0,0,.45),
         -2px  2px 0 rgba(0,0,0,.45),
          2px  2px 0 rgba(0,0,0,.45),
-         0 0 42px rgba(255,205,0,.95);
+         0 0 56px rgba(0,0,0,1);
     }
     27%{
       text-shadow:
@@ -527,7 +527,7 @@
          2px -2px 0 rgba(0,0,0,.45),
         -2px  2px 0 rgba(0,0,0,.45),
          2px  2px 0 rgba(0,0,0,.45),
-         0 0 42px rgba(255,205,0,.95);
+         0 0 56px rgba(0,0,0,1);
     }
     36%{
       text-shadow:
@@ -535,7 +535,7 @@
          2px -2px 0 rgba(0,0,0,.45),
         -2px  2px 0 rgba(0,0,0,.45),
          2px  2px 0 rgba(0,0,0,.45),
-         0 0 16px rgba(255,205,0,.95);
+         0 0 24px rgba(0,0,0,1);
     }
   }
   .alert-card span.sub{font-family:var(--font-body);font-size:22px;color:rgba(255,255,255,.92);font-weight:500;}
@@ -917,11 +917,28 @@ function setPatriaMode(enabled, event = null) {
   });
 }
 
+function updatePatriaBackground(event) {
+  if (!event) {
+    document.body.style.backgroundImage = '';
+    return;
+  }
+  const backgroundMap = {
+    '25 de mayo': 'fechas_patrias/25%20de%20mayo%20-%20fondo.jpg'
+  };
+  const backgroundUrl = backgroundMap[event.label];
+  if (backgroundUrl) {
+    document.body.style.background = `linear-gradient(rgba(4,28,24,.28), rgba(4,28,24,.28)), url('${backgroundUrl}') center / cover fixed no-repeat`;
+  }
+}
+
 function updatePatriaMode() {
   const event = getPatriaEvent(new Date());
   selectedPatriaEvent = event;
   setPatriaMode(Boolean(event), event);
-  if (event && (event.label === '24 de marzo' || event.label === '2 de abril')) setPatriaAsset(event);
+  if (event && (event.label === '24 de marzo' || event.label === '2 de abril' || event.label === '25 de mayo')) {
+    setPatriaAsset(event);
+    updatePatriaBackground(event);
+  }
 }
 
 function captionTextToHtml(title, text) {
@@ -950,20 +967,27 @@ function prepareCaptionScroll() {
   const duration = Math.max(18, distance * 0.12);
   scrollContent.style.setProperty('--caption-scroll-distance', `${-distance}px`);
   scrollContent.style.setProperty('--caption-scroll-duration', `${duration}s`);
+  
+  // Forzar reinicio de la animación
+  scrollContent.style.animation = 'none';
+  scrollContent.offsetHeight; // Forzar reflow
+  scrollContent.style.animation = `captionScroll ${duration}s ease-in-out 1 forwards`;
+  
   scrollContent.style.animationPlayState = distance > 0 ? 'running' : 'paused';
   return distance > 0 ? duration * 1000 : 0;
 }
 
 function scheduleCaptionScroll(onReady) {
   const notifyReady = () => {
-    if (onReady) onReady(prepareCaptionScroll());
+    const scrollDuration = prepareCaptionScroll();
+    if (onReady) onReady(scrollDuration);
   };
   requestAnimationFrame(() => {
     notifyReady();
     requestAnimationFrame(notifyReady);
   });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(notifyReady);
-  setTimeout(notifyReady, 300);
+  setTimeout(notifyReady, 800);
 }
 
 async function loadModeAssetManifest() {
@@ -998,7 +1022,8 @@ async function loadCaptionFor(imageFileName) {
 async function setPatriaAsset(event) {
   const imageExtensions = {
     '24 de marzo': 'webp',
-    '2 de abril': 'jpg'
+    '2 de abril': 'jpg',
+    '25 de mayo': 'jpg'
   };
   const imageExtension = imageExtensions[event ? event.label : undefined];
   if (!alertImage || !imageExtension) return;
@@ -1105,6 +1130,7 @@ modeToggle.addEventListener('click', async () => {
     setDecemberMode(decemberMode);
     selectedPatriaEvent = null;
     setPatriaMode(false);
+    updatePatriaBackground(null);
     stopModeImageRotation();
   }
 });
@@ -1120,8 +1146,11 @@ patriaEventToggles.forEach((button) => {
     if (!event) return;
     selectedPatriaEvent = patriaMode && selectedPatriaEvent && selectedPatriaEvent.label === event.label ? null : event;
     setPatriaMode(Boolean(selectedPatriaEvent), selectedPatriaEvent);
-    if (selectedPatriaEvent && (selectedPatriaEvent.label === '24 de marzo' || selectedPatriaEvent.label === '2 de abril')) {
+    if (selectedPatriaEvent && (selectedPatriaEvent.label === '24 de marzo' || selectedPatriaEvent.label === '2 de abril' || selectedPatriaEvent.label === '25 de mayo')) {
       setPatriaAsset(selectedPatriaEvent);
+      updatePatriaBackground(selectedPatriaEvent);
+    } else if (!selectedPatriaEvent) {
+      updatePatriaBackground(null);
     }
   });
 });
