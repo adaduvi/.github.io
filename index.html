@@ -233,6 +233,28 @@
     text-transform:uppercase;color:var(--muted);margin-top:3px;
   }
 
+  .sound-toggle{
+    width:34px;height:34px;
+    display:flex;align-items:center;justify-content:center;
+    margin-left:auto;margin-right:24px;
+    padding:0;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:rgba(255,255,255,.04);
+    color:var(--muted);
+    cursor:pointer;
+    appearance:none;
+  }
+  .sound-toggle:hover{background:rgba(255,255,255,.09);color:var(--ink);}
+  .sound-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+  .sound-toggle[aria-pressed="true"]{color:var(--ok);border-color:rgba(45,212,191,.45);}
+  .sound-toggle.playing svg{animation:soundIconBlink 1s ease-in-out infinite;}
+  @keyframes soundIconBlink{
+    0%,100%{opacity:1;}
+    50%{opacity:.22;}
+  }
+  .sound-toggle svg{width:17px;height:17px;}
+
   .clock{text-align:right;line-height:1.15;}
   .clock .time{
     font-family:var(--font-mono);font-weight:500;font-size:30px;color:var(--ink);
@@ -675,6 +697,12 @@
         <span>Panel de estado de salas - version 0.2.6</span>
       </div>
     </div>
+    <button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false" aria-label="Activar sonido" title="Activar sonido">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M5 10v4h3l4 3V7l-4 3H5Z" fill="currentColor"/>
+        <path d="M16 9.5a4 4 0 0 1 0 5M18.5 7a7.5 7.5 0 0 1 0 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </button>
     <div class="clock">
       <div class="time" id="timeText"></div>
       <div class="date" id="dateText"></div>
@@ -735,6 +763,7 @@ const ROOM_DEFINITIONS = ROOM_ORDER.map((name) => ({
 const grid = document.getElementById('grid');
 const alertWrapper = document.getElementById('alertWrapper');
 const modeToggle = document.querySelector('.mode-toggle');
+const soundToggle = document.getElementById('soundToggle');
 const developerModeIndicator = document.getElementById('developerModeIndicator');
 const decemberToggle = document.getElementById('decemberToggle');
 const patriaEventToggles = [...document.querySelectorAll('.patria-event-toggle')];
@@ -745,6 +774,8 @@ const alertImage = document.querySelector('.alert-image');
 const alertCaption = document.querySelector('.alert-caption');
 const timeText = document.getElementById('timeText');
 const dateText = document.getElementById('dateText');
+const silenceAudio = new Audio('sonido_hospital.ogg');
+silenceAudio.loop = true;
 
 const MODE_IMAGE_DIR = 'extra/';
 const MODE_MANIFEST_PATH = `${MODE_IMAGE_DIR}manifest.json`;
@@ -770,6 +801,8 @@ let modeImageTimer = null;
 let decemberMode = false;
 let patriaMode = false;
 let selectedPatriaEvent = null;
+let soundEnabled = false;
+let alertWasActive = false;
 let sleighAnimationFrame = null;
 let sleighLastFrame = 0;
 let sleighX = 0;
@@ -1114,6 +1147,45 @@ function stopModeImageRotation() {
   }, 600);
 }
 
+function updateSoundPlayback(alertActive) {
+  const shouldPlay = soundEnabled && alertActive;
+  if (shouldPlay) {
+    silenceAudio.play().catch(() => {
+      soundEnabled = false;
+      soundToggle.setAttribute('aria-pressed', 'false');
+      soundToggle.setAttribute('aria-label', 'Activar sonido');
+      soundToggle.setAttribute('title', 'Activar sonido');
+      soundToggle.classList.remove('playing');
+    });
+    return;
+  }
+  silenceAudio.pause();
+  silenceAudio.currentTime = 0;
+  soundToggle.classList.remove('playing');
+}
+
+function setSoundEnabled(enabled) {
+  soundEnabled = enabled;
+  soundToggle.setAttribute('aria-pressed', String(enabled));
+  soundToggle.setAttribute('aria-label', enabled ? 'Desactivar sonido' : 'Activar sonido');
+  soundToggle.setAttribute('title', enabled ? 'Desactivar sonido' : 'Activar sonido');
+}
+
+silenceAudio.addEventListener('playing', () => {
+  soundToggle.classList.add('playing');
+});
+
+['pause', 'ended', 'error'].forEach((eventName) => {
+  silenceAudio.addEventListener(eventName, () => {
+    soundToggle.classList.remove('playing');
+  });
+});
+
+soundToggle.addEventListener('click', () => {
+  setSoundEnabled(!soundEnabled);
+  updateSoundPlayback(alertWrapper.style.display !== 'none');
+});
+
 modeToggle.addEventListener('click', async () => {
   modeActive = !modeActive;
   alertWrapper.classList.toggle('mode-active', modeActive);
@@ -1305,6 +1377,9 @@ function render() {
   });
 
   alertWrapper.style.display = anyBusy ? 'flex' : 'none';
+  if (anyBusy && !alertWasActive) setSoundEnabled(true);
+  alertWasActive = anyBusy;
+  updateSoundPlayback(anyBusy);
 
   const nextFocusedCard = [...grid.querySelectorAll('.card')].find((card) => card.dataset.roomName === focusedRoomName);
   const initialCard = nextFocusedCard || grid.querySelector('.card');
