@@ -248,6 +248,7 @@
   .sound-toggle:hover{background:rgba(255,255,255,.09);color:var(--ink);}
   .sound-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
   .sound-toggle[aria-pressed="true"]{color:var(--ok);border-color:rgba(45,212,191,.45);}
+  .sound-toggle.sound-error{color:#ff4d67;border-color:rgba(255,77,103,.65);}
   .sound-toggle.playing svg{animation:soundIconBlink 1s ease-in-out infinite;}
   @keyframes soundIconBlink{
     0%,100%{opacity:1;}
@@ -694,7 +695,7 @@
       </button>
       <div class="brand-text">
         <h1>Centro de Simulación <span class="developer-mode-indicator" id="developerModeIndicator">Modo desarrollador</span></h1>
-        <span>Panel de estado de salas - version 0.2.6</span>
+        <span>Panel de estado de salas - version 0.2.7</span>
       </div>
     </div>
     <button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false" aria-label="Activar sonido" title="Activar sonido">
@@ -774,7 +775,8 @@ const alertImage = document.querySelector('.alert-image');
 const alertCaption = document.querySelector('.alert-caption');
 const timeText = document.getElementById('timeText');
 const dateText = document.getElementById('dateText');
-const silenceAudio = new Audio('sonido_hospital.ogg');
+const silenceAudio = new Audio(new URL('./sonido_hospital.mp3', document.baseURI).href);
+silenceAudio.preload = 'auto';
 silenceAudio.loop = true;
 
 const MODE_IMAGE_DIR = 'extra/';
@@ -1150,18 +1152,19 @@ function stopModeImageRotation() {
 function updateSoundPlayback(alertActive) {
   const shouldPlay = soundEnabled && alertActive;
   if (shouldPlay) {
-    silenceAudio.play().catch(() => {
+    updateSoundIndicator(true, 'waiting');
+    silenceAudio.play().catch((error) => {
       soundEnabled = false;
       soundToggle.setAttribute('aria-pressed', 'false');
       soundToggle.setAttribute('aria-label', 'Activar sonido');
-      soundToggle.setAttribute('title', 'Activar sonido');
-      soundToggle.classList.remove('playing');
+      soundToggle.setAttribute('title', `Error de audio: ${error.name}`);
+      updateSoundIndicator(true, 'error');
     });
     return;
   }
   silenceAudio.pause();
   silenceAudio.currentTime = 0;
-  soundToggle.classList.remove('playing');
+  updateSoundIndicator(false, 'idle');
 }
 
 function setSoundEnabled(enabled) {
@@ -1171,14 +1174,27 @@ function setSoundEnabled(enabled) {
   soundToggle.setAttribute('title', enabled ? 'Desactivar sonido' : 'Activar sonido');
 }
 
+function updateSoundIndicator(alertActive, status) {
+  const isPlaying = status === 'playing';
+  const isError = alertActive && status !== 'playing';
+  soundToggle.classList.toggle('playing', isPlaying);
+  soundToggle.classList.toggle('sound-error', isError);
+}
+
 silenceAudio.addEventListener('playing', () => {
-  soundToggle.classList.add('playing');
+  updateSoundIndicator(true, 'playing');
 });
 
 ['pause', 'ended', 'error'].forEach((eventName) => {
   silenceAudio.addEventListener(eventName, () => {
-    soundToggle.classList.remove('playing');
+    updateSoundIndicator(alertWrapper.style.display !== 'none', eventName === 'error' ? 'error' : 'idle');
   });
+});
+
+silenceAudio.addEventListener('error', () => {
+  const mediaError = silenceAudio.error;
+  const errorCode = mediaError ? ` (${mediaError.code})` : '';
+  soundToggle.setAttribute('title', `No se pudo cargar sonido_hospital.mp3${errorCode}`);
 });
 
 soundToggle.addEventListener('click', () => {
