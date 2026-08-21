@@ -58,7 +58,7 @@
   body.patria-mode{
     background:
       linear-gradient(rgba(4,28,24,.28), rgba(4,28,24,.28)),
-      url('fechas_patrias/fondo.webp') center / cover fixed no-repeat;
+      var(--patria-background-image, url('fechas_patrias/fondo.webp')) center / cover fixed no-repeat;
   }
 
   .snow-layer{
@@ -71,45 +71,6 @@
     box-shadow:0 0 5px rgba(255,255,255,.7);
     opacity:var(--snow-opacity);
     animation:snowFall var(--snow-duration) linear var(--snow-delay) infinite;
-  }
-  .santa-sleigh{
-    position:fixed;
-    z-index:4;
-    width:clamp(150px, 18vw, 300px);
-    max-width:42vw;
-    aspect-ratio:516 / 120;
-    height:auto;
-    pointer-events:none;
-    display:none;
-    opacity:0;
-    transform:translate(-50%, -50%);
-    filter:drop-shadow(0 8px 8px rgba(0,20,12,.34));
-    will-change:left, top, transform;
-  }
-  body.december-mode .santa-sleigh{
-    display:block;
-    opacity:.96;
-  }
-  .santa-sleigh-image{display:block;width:100%;height:100%;object-fit:contain;}
-  .sleigh-sparks{
-    position:fixed;inset:0;z-index:3;
-    pointer-events:none;overflow:hidden;display:none;
-  }
-  body.december-mode .sleigh-sparks{display:block;}
-  .sleigh-spark{
-    position:absolute;left:var(--spark-left);top:var(--spark-top);
-    width:var(--spark-width);height:var(--spark-height);
-    border-radius:999px;
-    background:linear-gradient(#fffbd1,#ffd34e 45%,rgba(255,117,24,0));
-    box-shadow:0 0 7px #ffd34e, 0 0 12px rgba(255,125,24,.75);
-    opacity:0;
-    transform-origin:top center;
-    animation:sparkFall var(--spark-duration) ease-in 0s forwards;
-  }
-  @keyframes sparkFall{
-    0%{transform:translate3d(0,0,0) scale(.6) rotate(var(--spark-angle));opacity:1;}
-    18%{opacity:1;}
-    100%{transform:translate3d(var(--spark-drift),var(--spark-distance),0) scale(.15) rotate(var(--spark-angle));opacity:0;}
   }
   @keyframes snowFall{
     0%{transform:translate3d(0,-12vh,0);}
@@ -233,29 +194,6 @@
     text-transform:uppercase;color:var(--muted);margin-top:3px;
   }
 
-  .sound-toggle{
-    width:34px;height:34px;
-    display:flex;align-items:center;justify-content:center;
-    margin-left:auto;margin-right:24px;
-    padding:0;
-    border:1px solid var(--line);
-    border-radius:10px;
-    background:rgba(255,255,255,.04);
-    color:var(--muted);
-    cursor:pointer;
-    appearance:none;
-  }
-  .sound-toggle:hover{background:rgba(255,255,255,.09);color:var(--ink);}
-  .sound-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
-  .sound-toggle[aria-pressed="true"]{color:var(--ok);border-color:rgba(45,212,191,.45);}
-  .sound-toggle.sound-error{color:#ff4d67;border-color:rgba(255,77,103,.65);}
-  .sound-toggle.playing svg{animation:soundIconBlink 1s ease-in-out infinite;}
-  @keyframes soundIconBlink{
-    0%,100%{opacity:1;}
-    50%{opacity:.22;}
-  }
-  .sound-toggle svg{width:17px;height:17px;}
-
   .clock{text-align:right;line-height:1.15;}
   .clock .time{
     font-family:var(--font-mono);font-weight:500;font-size:30px;color:var(--ink);
@@ -288,24 +226,6 @@
       inset 0 0 60px rgba(255,255,255,.05);
     transition:transform .2s ease, box-shadow .2s ease, filter .2s ease;
   }
-  .card-snow-cap{
-    position:absolute;
-    top:-1px;left:4px;right:4px;height:15px;
-    z-index:2;
-    pointer-events:none;
-    display:none;
-    background:
-      radial-gradient(18px 8px at 7% 100%, #fff 0 72%, transparent 74%),
-      radial-gradient(24px 9px at 23% 100%, #f8fcff 0 72%, transparent 74%),
-      radial-gradient(20px 8px at 42% 100%, #fff 0 72%, transparent 74%),
-      radial-gradient(28px 10px at 63% 100%, #f8fcff 0 72%, transparent 74%),
-      radial-gradient(18px 8px at 82% 100%, #fff 0 72%, transparent 74%),
-      linear-gradient(#fff 0 58%, #e8f4fb 100%);
-    border-radius:12px 12px 46% 42%;
-    box-shadow:0 3px 5px rgba(211,231,241,.7), 0 5px 9px rgba(0,20,35,.22);
-    filter:drop-shadow(0 1px 1px rgba(255,255,255,.75));
-  }
-  body.december-mode .card-snow-cap{display:block;}
   .card::before{
     content:"";position:absolute;inset:0;z-index:-1;
     background:radial-gradient(120% 90% at 8% -10%, rgba(255,255,255,.20), transparent 55%);
@@ -329,10 +249,7 @@
       inset 0 0 60px rgba(255,255,255,.07);
     filter:brightness(1.04);
   }
-  .card:focus{
-    outline:none;
-  }
-  body.keyboard-navigation .card:focus{
+  .card:focus-visible{
     outline:2px solid #fff;
     outline-offset:3px;
   }
@@ -497,13 +414,13 @@
     content:"";position:absolute;inset:0;z-index:0;
   }
   .alert-card::before{
-    background:#ff0014;
-    animation:alertFadeRed 60s ease-in-out infinite;
+    background:linear-gradient(135deg,var(--ocupada-1) 0%,var(--ocupada-2) 100%);
+    animation:alertFadeRed 120s ease-in-out infinite;
   }
   .alert-card::after{
-    background:#ffdd00;
+    background:linear-gradient(135deg,var(--debrief-1) 0%,var(--debrief-2) 100%);
     opacity:0;
-    animation:alertFadeAmber 60s ease-in-out infinite;
+    animation:alertFadeAmber 120s ease-in-out infinite;
   }
   @keyframes alertFadeRed{
     0%{opacity:1;} 50%{opacity:0;} 100%{opacity:1;}
@@ -534,7 +451,7 @@
          2px -2px 0 rgba(0,0,0,.45),
         -2px  2px 0 rgba(0,0,0,.45),
          2px  2px 0 rgba(0,0,0,.45),
-         0 0 24px rgba(0,0,0,1);
+         0 0 16px rgba(255,205,0,.95);
     }
     9%{
       text-shadow:
@@ -542,7 +459,7 @@
          2px -2px 0 rgba(0,0,0,.45),
         -2px  2px 0 rgba(0,0,0,.45),
          2px  2px 0 rgba(0,0,0,.45),
-         0 0 56px rgba(0,0,0,1);
+         0 0 42px rgba(255,205,0,.95);
     }
     27%{
       text-shadow:
@@ -550,7 +467,7 @@
          2px -2px 0 rgba(0,0,0,.45),
         -2px  2px 0 rgba(0,0,0,.45),
          2px  2px 0 rgba(0,0,0,.45),
-         0 0 56px rgba(0,0,0,1);
+         0 0 42px rgba(255,205,0,.95);
     }
     36%{
       text-shadow:
@@ -558,7 +475,7 @@
          2px -2px 0 rgba(0,0,0,.45),
         -2px  2px 0 rgba(0,0,0,.45),
          2px  2px 0 rgba(0,0,0,.45),
-         0 0 24px rgba(0,0,0,1);
+         0 0 16px rgba(255,205,0,.95);
     }
   }
   .alert-card span.sub{font-family:var(--font-body);font-size:22px;color:rgba(255,255,255,.92);font-weight:500;}
@@ -641,7 +558,7 @@
     padding-right:4px;
   }
   .alert-caption-scroll{
-    animation:captionScroll var(--caption-scroll-duration, 24s) ease-in-out 1 forwards;
+    animation:captionScroll var(--caption-scroll-duration, 24s) ease-in-out infinite alternate;
   }
   @keyframes captionScroll{
     from{transform:translateY(0);}
@@ -679,10 +596,6 @@
 </head>
 <body>
 <div class="snow-layer" id="snowLayer" aria-hidden="true"></div>
-<div class="sleigh-sparks" id="sleighSparks" aria-hidden="true"></div>
-<div class="santa-sleigh" id="santaSleigh" aria-hidden="true">
-  <img class="santa-sleigh-image" src="extra/trineo.png" alt="" />
-</div>
 <div class="wrap">
   <header>
     <div class="brand">
@@ -695,15 +608,9 @@
       </button>
       <div class="brand-text">
         <h1>Centro de Simulación <span class="developer-mode-indicator" id="developerModeIndicator">Modo desarrollador</span></h1>
-        <span>Panel de estado de salas - version 0.2.7</span>
+        <span>Panel de estado de salas - version 0.2</span>
       </div>
     </div>
-    <button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false" aria-label="Activar sonido" title="Activar sonido">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M5 10v4h3l4 3V7l-4 3H5Z" fill="currentColor"/>
-        <path d="M16 9.5a4 4 0 0 1 0 5M18.5 7a7.5 7.5 0 0 1 0 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-      </svg>
-    </button>
     <div class="clock">
       <div class="time" id="timeText"></div>
       <div class="date" id="dateText"></div>
@@ -764,24 +671,19 @@ const ROOM_DEFINITIONS = ROOM_ORDER.map((name) => ({
 const grid = document.getElementById('grid');
 const alertWrapper = document.getElementById('alertWrapper');
 const modeToggle = document.querySelector('.mode-toggle');
-const soundToggle = document.getElementById('soundToggle');
 const developerModeIndicator = document.getElementById('developerModeIndicator');
 const decemberToggle = document.getElementById('decemberToggle');
 const patriaEventToggles = [...document.querySelectorAll('.patria-event-toggle')];
 const snowLayer = document.getElementById('snowLayer');
-const santaSleigh = document.getElementById('santaSleigh');
-const sleighSparks = document.getElementById('sleighSparks');
 const alertImage = document.querySelector('.alert-image');
 const alertCaption = document.querySelector('.alert-caption');
 const timeText = document.getElementById('timeText');
 const dateText = document.getElementById('dateText');
-const silenceAudio = new Audio(new URL('./sonido_hospital.mp3', document.baseURI).href);
-silenceAudio.preload = 'auto';
-silenceAudio.loop = true;
 
 const MODE_IMAGE_DIR = 'extra/';
 const MODE_MANIFEST_PATH = `${MODE_IMAGE_DIR}manifest.json`;
-const MODE_IMAGE_PAUSE = 10000;
+const MODE_IMAGE_INTERVAL = 30000;
+const PATRIA_IMAGE_DIR = 'fechas_patrias/';
 const PATRIA_EVENTS = [
   { day: 24, month: 2, label: '24 de marzo' },
   { day: 2, month: 3, label: '2 de abril' },
@@ -791,7 +693,13 @@ const PATRIA_EVENTS = [
   { day: 20, month: 5, label: '20 de junio' },
   { day: 9, month: 6, label: '9 de julio' },
   { day: 17, month: 7, label: '17 de agosto' },
-  { day: 12, month: 9, label: '12 de octubre' },
+  {
+    day: 12,
+    month: 9,
+    label: '12 de octubre',
+    image: '12 de octubre.jpeg',
+    background: '12 de octubre - fondo.jpg'
+  },
   { day: 20, month: 10, label: '20 de noviembre' }
 ];
 
@@ -803,16 +711,6 @@ let modeImageTimer = null;
 let decemberMode = false;
 let patriaMode = false;
 let selectedPatriaEvent = null;
-let soundEnabled = false;
-let alertWasActive = false;
-let sleighAnimationFrame = null;
-let sleighLastFrame = 0;
-let sleighX = 0;
-let sleighY = 0;
-let sleighTargetY = 0;
-let sleighDirection = 1;
-let sleighInitialized = false;
-let sleighSparkTimer = null;
 
 function isDecember(date) {
   return date.getMonth() === 11 && date.getDate() >= 1 && date.getDate() <= 31;
@@ -833,107 +731,10 @@ function createSnowflakes() {
   }
 }
 
-function createSleighSparks() {
-  if (!sleighSparks || sleighSparks.childElementCount > 0) return;
-  for (let index = 0; index < 60; index += 1) {
-    const spark = document.createElement('span');
-    spark.className = 'sleigh-spark';
-    sleighSparks.appendChild(spark);
-  }
-}
-
-function emitSleighSpark() {
-  if (!santaSleigh || !sleighSparks || !decemberMode) return;
-  const sleighRect = santaSleigh.getBoundingClientRect();
-  const spark = sleighSparks.children[Math.floor(Math.random() * sleighSparks.children.length)];
-  if (!spark) return;
-  const originX = sleighRect.left + sleighRect.width * (.2 + Math.random() * .6);
-  const originY = sleighRect.bottom - 12;
-  spark.style.setProperty('--spark-left', `${originX}px`);
-  spark.style.setProperty('--spark-top', `${originY}px`);
-  spark.style.setProperty('--spark-width', `${1.5 + Math.random() * 2.5}px`);
-  spark.style.setProperty('--spark-height', `${5 + Math.random() * 9}px`);
-  spark.style.setProperty('--spark-duration', `${.9 + Math.random() * 1.1}s`);
-  spark.style.setProperty('--spark-drift', `${-10 + Math.random() * 20}px`);
-  spark.style.setProperty('--spark-distance', `${45 + Math.random() * 75}px`);
-  spark.style.setProperty('--spark-angle', `${-25 + Math.random() * 50}deg`);
-  spark.style.animation = 'none';
-  void spark.offsetWidth;
-  spark.style.animation = 'sparkFall var(--spark-duration) ease-in 0s forwards';
-}
-
-function startSleighSparks() {
-  if (!sleighSparks || sleighSparkTimer) return;
-  for (let index = 0; index < 24; index += 1) emitSleighSpark();
-  sleighSparkTimer = setInterval(emitSleighSpark, 55);
-}
-
-function stopSleighSparks() {
-  clearInterval(sleighSparkTimer);
-  sleighSparkTimer = null;
-  if (sleighSparks) {
-    [...sleighSparks.children].forEach((spark) => {
-      spark.style.animation = 'none';
-      spark.style.opacity = '0';
-    });
-  }
-}
-
-function chooseSantaSleighHeight() {
-  const imageHeight = santaSleigh.getBoundingClientRect().height || 140;
-  const margin = Math.min(imageHeight / 2 + 12, window.innerHeight * .1);
-  sleighTargetY = margin + Math.random() * Math.max(1, window.innerHeight - margin * 2);
-}
-
-function animateSantaSleigh(timestamp) {
-  if (!santaSleigh || !decemberMode) {
-    sleighAnimationFrame = null;
-    return;
-  }
-  const elapsed = Math.min(48, timestamp - (sleighLastFrame || timestamp));
-  sleighLastFrame = timestamp;
-  const imageWidth = santaSleigh.getBoundingClientRect().width || 220;
-  sleighX += sleighDirection * elapsed * .11;
-  if (sleighX > window.innerWidth + imageWidth / 2) sleighX = -imageWidth / 2;
-  if (sleighX < -imageWidth / 2) sleighX = window.innerWidth + imageWidth / 2;
-  sleighY += (sleighTargetY - sleighY) * Math.min(1, elapsed / 2600);
-  if (Math.abs(sleighTargetY - sleighY) < 2) chooseSantaSleighHeight();
-  santaSleigh.style.left = `${sleighX}px`;
-  santaSleigh.style.top = `${sleighY}px`;
-  santaSleigh.style.transform = `translate(-50%, -50%) scaleX(${sleighDirection})`;
-  sleighAnimationFrame = requestAnimationFrame(animateSantaSleigh);
-}
-
-function startSantaSleigh() {
-  if (!santaSleigh || !decemberMode) return;
-  const imageWidth = santaSleigh.getBoundingClientRect().width || 220;
-  const imageHeight = santaSleigh.getBoundingClientRect().height || 140;
-  if (!sleighInitialized) {
-    sleighX = -imageWidth / 2;
-    sleighY = Math.max(imageHeight / 2, window.innerHeight * .3);
-    chooseSantaSleighHeight();
-    sleighInitialized = true;
-  }
-  santaSleigh.style.left = `${sleighX}px`;
-  santaSleigh.style.top = `${sleighY}px`;
-  santaSleigh.style.transform = `translate(-50%, -50%) scaleX(${sleighDirection})`;
-  cancelAnimationFrame(sleighAnimationFrame);
-  sleighLastFrame = 0;
-  sleighAnimationFrame = requestAnimationFrame(animateSantaSleigh);
-}
-
 function setDecemberMode(enabled) {
   decemberMode = enabled;
   document.body.classList.toggle('december-mode', enabled);
   if (decemberToggle) decemberToggle.setAttribute('aria-pressed', String(enabled));
-  if (enabled) {
-    startSantaSleigh();
-    startSleighSparks();
-  } else {
-    cancelAnimationFrame(sleighAnimationFrame);
-    sleighAnimationFrame = null;
-    stopSleighSparks();
-  }
 }
 
 function updateDecemberMode() {
@@ -947,34 +748,20 @@ function getPatriaEvent(date) {
 function setPatriaMode(enabled, event = null) {
   patriaMode = enabled;
   document.body.classList.toggle('patria-mode', enabled);
+  const backgroundImage = event?.background
+    ? `url("${PATRIA_IMAGE_DIR}${encodeURIComponent(event.background)}")`
+    : "url('fechas_patrias/fondo.webp')";
+  document.body.style.setProperty('--patria-background-image', backgroundImage);
   patriaEventToggles.forEach((button) => {
-    button.setAttribute('aria-pressed', String(enabled && button.dataset.eventDate === (event ? event.label : undefined)));
+    button.setAttribute('aria-pressed', String(enabled && button.dataset.eventDate === event?.label));
   });
-}
-
-function updatePatriaBackground(event) {
-  if (!event) {
-    document.body.style.backgroundImage = '';
-    return;
-  }
-  const backgroundMap = {
-    '25 de mayo': 'fechas_patrias/25%20de%20mayo%20-%20fondo.jpg',
-    '17 de junio': 'fechas_patrias/17%20de%20junio%20-%20fondo.webp'
-  };
-  const backgroundUrl = backgroundMap[event.label];
-  if (backgroundUrl) {
-    document.body.style.background = `linear-gradient(rgba(4,28,24,.28), rgba(4,28,24,.28)), url('${backgroundUrl}') center / cover fixed no-repeat`;
-  }
 }
 
 function updatePatriaMode() {
   const event = getPatriaEvent(new Date());
   selectedPatriaEvent = event;
   setPatriaMode(Boolean(event), event);
-  if (event && (event.label === '24 de marzo' || event.label === '2 de abril' || event.label === '25 de mayo' || event.label === '17 de junio')) {
-    setPatriaAsset(event);
-    updatePatriaBackground(event);
-  }
+  if (modeActive) startModeImageRotation();
 }
 
 function captionTextToHtml(title, text) {
@@ -994,36 +781,15 @@ function captionTextToHtml(title, text) {
 }
 
 function prepareCaptionScroll() {
-  if (!alertCaption) return 0;
+  if (!alertCaption) return;
   const body = alertCaption.querySelector('.alert-caption-body');
   const scrollContent = alertCaption.querySelector('.alert-caption-scroll');
-  if (!body || !scrollContent) return 0;
+  if (!body || !scrollContent) return;
 
   const distance = Math.max(0, scrollContent.scrollHeight - body.clientHeight);
-  const duration = Math.max(18, distance * 0.12);
   scrollContent.style.setProperty('--caption-scroll-distance', `${-distance}px`);
-  scrollContent.style.setProperty('--caption-scroll-duration', `${duration}s`);
-  
-  // Forzar reinicio de la animación
-  scrollContent.style.animation = 'none';
-  scrollContent.offsetHeight; // Forzar reflow
-  scrollContent.style.animation = `captionScroll ${duration}s ease-in-out 1 forwards`;
-  
+  scrollContent.style.setProperty('--caption-scroll-duration', `${Math.max(18, distance * 0.12)}s`);
   scrollContent.style.animationPlayState = distance > 0 ? 'running' : 'paused';
-  return distance > 0 ? duration * 1000 : 0;
-}
-
-function scheduleCaptionScroll(onReady) {
-  const notifyReady = () => {
-    const scrollDuration = prepareCaptionScroll();
-    if (onReady) onReady(scrollDuration);
-  };
-  requestAnimationFrame(() => {
-    notifyReady();
-    requestAnimationFrame(notifyReady);
-  });
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(notifyReady);
-  setTimeout(notifyReady, 800);
 }
 
 async function loadModeAssetManifest() {
@@ -1043,10 +809,10 @@ async function loadModeAssetManifest() {
   }
 }
 
-async function loadCaptionFor(imageFileName) {
+async function loadCaptionFor(imageFileName, imageDir = MODE_IMAGE_DIR) {
   const base = imageFileName.replace(/\.[^./]+$/, '');
   try {
-    const response = await fetch(`${MODE_IMAGE_DIR}${encodeURIComponent(base)}.txt`, { cache: 'no-cache' });
+    const response = await fetch(`${imageDir}${encodeURIComponent(base)}.txt`, { cache: 'no-cache' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return (await response.text()).trim();
   } catch (error) {
@@ -1055,49 +821,11 @@ async function loadCaptionFor(imageFileName) {
   }
 }
 
-async function setPatriaAsset(event) {
-  const imageExtensions = {
-    '24 de marzo': 'webp',
-    '2 de abril': 'jpg',
-    '25 de mayo': 'jpg',
-    '17 de junio': 'jpg'
-  };
-  const imageExtension = imageExtensions[event ? event.label : undefined];
-  if (!alertImage || !imageExtension) return;
-  const baseName = encodeURIComponent(event.label);
-  const imageUrl = `fechas_patrias/${baseName}.${imageExtension}`;
-  let caption = '';
-  try {
-    const response = await fetch(`fechas_patrias/${baseName}.txt`, { cache: 'no-cache' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    caption = (await response.text()).trim();
-  } catch (error) {
-    console.warn(`No se pudo cargar el texto de fechas_patrias/${event.label}.txt`, error);
-  }
-  const nextImage = new Image();
-  nextImage.onload = () => {
-    alertImage.style.opacity = '0';
-    setTimeout(() => {
-      if (!patriaMode || !selectedPatriaEvent || selectedPatriaEvent.label !== event.label) return;
-      alertImage.src = imageUrl;
-      if (alertCaption) {
-        alertCaption.innerHTML = captionTextToHtml(event.label, caption);
-        scheduleCaptionScroll();
-      }
-      alertImage.style.opacity = '1';
-    }, 600);
-  };
-  nextImage.onerror = () => {
-    console.warn(`No se pudo cargar la imagen ${imageUrl}.`);
-  };
-  nextImage.src = imageUrl;
-}
-
-async function setAlertAsset(imageFileName) {
+async function setAlertAsset(imageFileName, imageDir = MODE_IMAGE_DIR) {
   if (!alertImage) return;
-  const caption = await loadCaptionFor(imageFileName);
+  const caption = await loadCaptionFor(imageFileName, imageDir);
   const title = imageFileName.replace(/\.[^./]+$/, '');
-  const imageUrl = `${MODE_IMAGE_DIR}${encodeURIComponent(imageFileName)}`;
+  const imageUrl = `${imageDir}${encodeURIComponent(imageFileName)}`;
   const nextImage = new Image();
   nextImage.onload = () => {
     alertImage.style.opacity = '0';
@@ -1106,9 +834,7 @@ async function setAlertAsset(imageFileName) {
       alertImage.src = imageUrl;
       if (alertCaption) {
         alertCaption.innerHTML = captionTextToHtml(title, caption);
-        scheduleCaptionScroll((scrollDuration) => {
-          scheduleModeImageRotation(scrollDuration);
-        });
+        requestAnimationFrame(prepareCaptionScroll);
       }
       alertImage.style.opacity = '1';
     }, 600);
@@ -1125,20 +851,23 @@ function rotateModeImage() {
   setAlertAsset(modeAssets[modeImageIndex]);
 }
 
-function scheduleModeImageRotation(scrollDuration) {
-  clearTimeout(modeImageTimer);
-  if (!modeActive || modeAssets.length <= 1) return;
-  modeImageTimer = setTimeout(rotateModeImage, scrollDuration + MODE_IMAGE_PAUSE);
-}
-
 function startModeImageRotation() {
-  if (!alertImage || modeAssets.length === 0) return;
+  if (!alertImage) return;
+  clearInterval(modeImageTimer);
+  if (patriaMode && selectedPatriaEvent?.image) {
+    modeImageIndex = 0;
+    setAlertAsset(selectedPatriaEvent.image, PATRIA_IMAGE_DIR);
+    modeImageTimer = null;
+    return;
+  }
+  if (modeAssets.length === 0) return;
   modeImageIndex = 0;
   setAlertAsset(modeAssets[modeImageIndex]);
+  modeImageTimer = setInterval(rotateModeImage, MODE_IMAGE_INTERVAL);
 }
 
 function stopModeImageRotation() {
-  clearTimeout(modeImageTimer);
+  clearInterval(modeImageTimer);
   modeImageTimer = null;
   if (!alertImage) return;
   alertImage.style.opacity = '0';
@@ -1148,59 +877,6 @@ function stopModeImageRotation() {
     alertImage.style.opacity = '1';
   }, 600);
 }
-
-function updateSoundPlayback(alertActive) {
-  const shouldPlay = soundEnabled && alertActive;
-  if (shouldPlay) {
-    updateSoundIndicator(true, 'waiting');
-    silenceAudio.play().catch((error) => {
-      soundEnabled = false;
-      soundToggle.setAttribute('aria-pressed', 'false');
-      soundToggle.setAttribute('aria-label', 'Activar sonido');
-      soundToggle.setAttribute('title', `Error de audio: ${error.name}`);
-      updateSoundIndicator(true, 'error');
-    });
-    return;
-  }
-  silenceAudio.pause();
-  silenceAudio.currentTime = 0;
-  updateSoundIndicator(false, 'idle');
-}
-
-function setSoundEnabled(enabled) {
-  soundEnabled = enabled;
-  soundToggle.setAttribute('aria-pressed', String(enabled));
-  soundToggle.setAttribute('aria-label', enabled ? 'Desactivar sonido' : 'Activar sonido');
-  soundToggle.setAttribute('title', enabled ? 'Desactivar sonido' : 'Activar sonido');
-}
-
-function updateSoundIndicator(alertActive, status) {
-  const isPlaying = status === 'playing';
-  const isError = alertActive && status !== 'playing';
-  soundToggle.classList.toggle('playing', isPlaying);
-  soundToggle.classList.toggle('sound-error', isError);
-}
-
-silenceAudio.addEventListener('playing', () => {
-  updateSoundIndicator(true, 'playing');
-});
-
-['pause', 'ended', 'error'].forEach((eventName) => {
-  silenceAudio.addEventListener(eventName, () => {
-    updateSoundIndicator(alertWrapper.style.display !== 'none', eventName === 'error' ? 'error' : 'idle');
-  });
-});
-
-silenceAudio.addEventListener('error', () => {
-  const mediaError = silenceAudio.error;
-  const errorCode = mediaError ? ` (${mediaError.code})` : '';
-  soundToggle.setAttribute('title', `No se pudo cargar sonido_hospital.mp3${errorCode}`);
-});
-
-soundToggle.addEventListener('click', () => {
-  setSoundEnabled(!soundEnabled);
-  updateSoundPlayback(alertWrapper.style.display !== 'none');
-});
 
 modeToggle.addEventListener('click', async () => {
   modeActive = !modeActive;
@@ -1220,7 +896,6 @@ modeToggle.addEventListener('click', async () => {
     setDecemberMode(decemberMode);
     selectedPatriaEvent = null;
     setPatriaMode(false);
-    updatePatriaBackground(null);
     stopModeImageRotation();
   }
 });
@@ -1234,26 +909,15 @@ patriaEventToggles.forEach((button) => {
     if (modeActive) return;
     const event = PATRIA_EVENTS.find((item) => item.label === button.dataset.eventDate);
     if (!event) return;
-    selectedPatriaEvent = patriaMode && selectedPatriaEvent && selectedPatriaEvent.label === event.label ? null : event;
+    selectedPatriaEvent = patriaMode && selectedPatriaEvent?.label === event.label ? null : event;
     setPatriaMode(Boolean(selectedPatriaEvent), selectedPatriaEvent);
-    if (selectedPatriaEvent && (selectedPatriaEvent.label === '24 de marzo' || selectedPatriaEvent.label === '2 de abril' || selectedPatriaEvent.label === '25 de mayo' || selectedPatriaEvent.label === '17 de junio')) {
-      setPatriaAsset(selectedPatriaEvent);
-      updatePatriaBackground(selectedPatriaEvent);
-    } else if (!selectedPatriaEvent) {
-      updatePatriaBackground(null);
-    }
   });
 });
 
 loadModeAssetManifest().then(startModeImageRotation);
 createSnowflakes();
-createSleighSparks();
 updateDecemberMode();
 updatePatriaMode();
-window.addEventListener('resize', () => {
-  if (decemberMode) chooseSantaSleighHeight();
-  scheduleCaptionScroll();
-});
 setInterval(() => {
   if (modeActive) {
     updateDecemberMode();
@@ -1321,27 +985,7 @@ function toggleRoomState(name) {
   render();
 }
 
-function moveRoomFocus(card, key) {
-  const cards = [...grid.querySelectorAll('.card')];
-  const currentIndex = cards.indexOf(card);
-  if (currentIndex < 0) return;
-
-  const columns = Math.max(1, getComputedStyle(grid).gridTemplateColumns.split(' ').length);
-  let nextIndex = currentIndex;
-
-  if (key === 'ArrowLeft') nextIndex = currentIndex > 0 ? currentIndex - 1 : cards.length - 1;
-  if (key === 'ArrowRight') nextIndex = currentIndex < cards.length - 1 ? currentIndex + 1 : 0;
-  if (key === 'ArrowUp') nextIndex = currentIndex >= columns ? currentIndex - columns : currentIndex;
-  if (key === 'ArrowDown') nextIndex = currentIndex + columns < cards.length ? currentIndex + columns : currentIndex;
-
-  if (nextIndex !== currentIndex) {
-    cards[nextIndex].focus();
-  }
-}
-
 function render() {
-  const activeCard = document.activeElement && document.activeElement.closest('.card');
-  const focusedRoomName = activeCard ? activeCard.dataset.roomName : undefined;
   grid.innerHTML = '';
   let anyBusy = false;
 
@@ -1364,25 +1008,17 @@ function render() {
     card.style.setProperty('--grad-2', g2);
     card.setAttribute('tabindex', '0');
     card.setAttribute('role', 'button');
-    card.dataset.roomName = roomDisplayName(room.name);
     card.setAttribute('aria-pressed', String(roomState !== 'libre'));
     card.addEventListener('click', () => toggleRoomState(room.name));
     card.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         toggleRoomState(room.name);
-        return;
-      }
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        e.preventDefault();
-        document.body.classList.add('keyboard-navigation');
-        moveRoomFocus(card, e.key);
       }
     });
 
     card.innerHTML = `
       <div class="card-sheen"></div>
-      <div class="card-snow-cap" aria-hidden="true"></div>
       <div class="card-top">
         <span class="eyebrow"><span class="code">${code}</span> ${eyebrowLabel(room)}</span>
         <span class="led ${roomState !== 'libre' ? 'pulse' : ''}"></span>
@@ -1393,15 +1029,6 @@ function render() {
   });
 
   alertWrapper.style.display = anyBusy ? 'flex' : 'none';
-  if (anyBusy && !alertWasActive) setSoundEnabled(true);
-  alertWasActive = anyBusy;
-  updateSoundPlayback(anyBusy);
-
-  const nextFocusedCard = [...grid.querySelectorAll('.card')].find((card) => card.dataset.roomName === focusedRoomName);
-  const initialCard = nextFocusedCard || grid.querySelector('.card');
-  if (initialCard) {
-    initialCard.focus();
-  }
 }
 
 function updateDateTime() {
