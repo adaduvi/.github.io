@@ -634,6 +634,9 @@
     max-width:330px;
     overflow:hidden;
   }
+  body.women-day-mode .alert-caption{
+    color:#111827;
+  }
   .alert-caption-title{
     margin:0 0 .6em;
     font-size:20px;
@@ -1000,8 +1003,8 @@ function updatePatriaBackground(event) {
     '17 de junio': 'fechas_patrias/17%20de%20junio%20-%20fondo.webp',
     '12 de octubre': 'fechas_patrias/12%20de%20octubre%20-%20fondo.jpg'
   };
-  const backgroundUrl = backgroundMap[event.label];
-  document.body.classList.toggle('has-patria-background', Boolean(backgroundUrl));
+  const backgroundUrl = backgroundMap[event.label] || 'fechas_patrias/fondo.webp';
+  document.body.classList.add('has-patria-background');
   if (backgroundUrl) {
     const overlay = event.label === '8 de marzo'
       ? 'rgba(236,104,155,.28)'
