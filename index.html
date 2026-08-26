@@ -634,7 +634,8 @@
     max-width:330px;
     overflow:hidden;
   }
-  body.women-day-mode .alert-caption{
+  body.women-day-mode .alert-caption,
+  body.october-twelfth-mode .alert-caption{
     color:#111827;
   }
   .alert-caption-title{
@@ -994,6 +995,7 @@ function setPatriaMode(enabled, event = null) {
 function updatePatriaBackground(event) {
   if (!event) {
     document.body.classList.remove('has-patria-background');
+    document.body.classList.remove('october-twelfth-mode');
     document.body.style.background = '';
     return;
   }
@@ -1005,6 +1007,7 @@ function updatePatriaBackground(event) {
   };
   const backgroundUrl = backgroundMap[event.label] || 'fechas_patrias/fondo.webp';
   document.body.classList.add('has-patria-background');
+  document.body.classList.toggle('october-twelfth-mode', event.label === '12 de octubre');
   if (backgroundUrl) {
     const overlay = event.label === '8 de marzo'
       ? 'rgba(236,104,155,.28)'
@@ -1018,7 +1021,7 @@ function updatePatriaMode() {
   selectedPatriaEvent = event;
   setPatriaMode(Boolean(event), event);
   updatePatriaBackground(event);
-  if (event && (event.label === '24 de marzo' || event.label === '2 de abril' || event.label === '8 de marzo' || event.label === '25 de mayo' || event.label === '17 de junio')) {
+  if (event && (event.label === '24 de marzo' || event.label === '2 de abril' || event.label === '8 de marzo' || event.label === '25 de mayo' || event.label === '17 de junio' || event.label === '12 de octubre')) {
     setPatriaAsset(event);
   }
 }
@@ -1111,7 +1114,8 @@ async function setPatriaAsset(event) {
     '24 de marzo': 'webp',
     '2 de abril': 'jpg',
     '25 de mayo': 'jpg',
-    '17 de junio': 'jpg'
+    '17 de junio': 'jpg',
+    '12 de octubre': 'jpeg'
   };
   const imageExtension = imageExtensions[event ? event.label : undefined];
   if (!alertImage || !imageExtension) return;
@@ -1360,7 +1364,7 @@ patriaEventToggles.forEach((button) => {
     }
     clearTimeout(womenDayImageTimer);
     updatePatriaBackground(selectedPatriaEvent);
-    if (selectedPatriaEvent && (selectedPatriaEvent.label === '24 de marzo' || selectedPatriaEvent.label === '2 de abril' || selectedPatriaEvent.label === '8 de marzo' || selectedPatriaEvent.label === '25 de mayo' || selectedPatriaEvent.label === '17 de junio')) {
+    if (selectedPatriaEvent && (selectedPatriaEvent.label === '24 de marzo' || selectedPatriaEvent.label === '2 de abril' || selectedPatriaEvent.label === '8 de marzo' || selectedPatriaEvent.label === '25 de mayo' || selectedPatriaEvent.label === '17 de junio' || selectedPatriaEvent.label === '12 de octubre')) {
       setPatriaAsset(selectedPatriaEvent);
     } else if (!selectedPatriaEvent) {
       setWomenDayMode(false);
