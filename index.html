@@ -1075,6 +1075,15 @@ function scheduleCaptionScroll(onReady) {
   setTimeout(notifyReady, 800);
 }
 
+function shuffleAssets(assets) {
+  const shuffledAssets = [...assets];
+  for (let index = shuffledAssets.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffledAssets[index], shuffledAssets[randomIndex]] = [shuffledAssets[randomIndex], shuffledAssets[index]];
+  }
+  return shuffledAssets;
+}
+
 async function loadModeAssetManifest() {
   try {
     const response = await fetch(`${MODE_MANIFEST_PATH}?t=${Date.now()}`, { cache: 'no-store' });
@@ -1085,7 +1094,7 @@ async function loadModeAssetManifest() {
       : [];
 
     if (!manifestAssets.length) throw new Error('El manifiesto no contiene imágenes');
-    modeAssets = manifestAssets;
+    modeAssets = shuffleAssets(manifestAssets);
   } catch (error) {
     modeAssets = [];
     console.warn('No se pudo cargar extra/manifest.json:', error);
@@ -1153,10 +1162,11 @@ async function loadWomenDayManifest() {
     const response = await fetch(`${WOMEN_DAY_MANIFEST_PATH}?t=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    womenDayAssets = Array.isArray(data)
+    const manifestAssets = Array.isArray(data)
       ? data.map((entry) => (typeof entry === 'string' ? entry : entry.image)).filter(Boolean)
       : [];
-    if (!womenDayAssets.length) throw new Error('El manifiesto no contiene imágenes');
+    if (!manifestAssets.length) throw new Error('El manifiesto no contiene imágenes');
+    womenDayAssets = shuffleAssets(manifestAssets);
   } catch (error) {
     womenDayAssets = [];
     console.warn('No se pudo cargar fechas_patrias/8 de marzo/manifest.json:', error);
@@ -1183,7 +1193,7 @@ async function setWomenDayAsset(imageFileName) {
       if (!patriaMode || !selectedPatriaEvent || selectedPatriaEvent.label !== '8 de marzo') return;
       alertImage.src = imageUrl;
       if (alertCaption) {
-        alertCaption.innerHTML = captionTextToHtml('8 de marzo - Día de la Mujer', caption);
+        alertCaption.innerHTML = captionTextToHtml(baseName, caption);
         scheduleCaptionScroll((scrollDuration) => scheduleWomenDayImageRotation(scrollDuration));
       }
       alertImage.style.opacity = '1';
