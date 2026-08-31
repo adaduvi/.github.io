@@ -66,6 +66,12 @@
       radial-gradient(800px 620px at 105% 15%, rgba(255,128,177,.62), transparent 64%),
       linear-gradient(145deg, #ed82ad 0%, #f4a8c5 52%, #e8669b 100%);
   }
+  body.september-twenty-first-mode{
+    background:
+      radial-gradient(900px 620px at 12% -10%, rgba(255,233,146,.34), transparent 62%),
+      radial-gradient(780px 560px at 105% 15%, rgba(38,130,95,.38), transparent 62%),
+      linear-gradient(145deg, #1c7f5c 0%, #2e8d6c 38%, #0d3f2f 100%);
+  }
 
   .snow-layer{
     position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;display:none;
@@ -111,6 +117,41 @@
     opacity:0;
     transform-origin:top center;
     animation:sparkFall var(--spark-duration) ease-in 0s forwards;
+  }
+
+  .butterfly-layer{
+    position:fixed;inset:0;z-index:3;pointer-events:none;overflow:hidden;display:none;
+  }
+  body.september-twenty-first-mode .butterfly-layer{display:block;}
+  .butterfly{
+    position:absolute;
+    left:var(--butterfly-left, 0px);
+    top:var(--butterfly-top, 0px);
+    width:var(--butterfly-size, 54px);
+    height:var(--butterfly-size, 54px);
+    opacity:0;
+    filter:drop-shadow(0 8px 16px rgba(0,0,0,.15));
+    animation:butterflyFlight var(--butterfly-duration, 18s) ease-in-out infinite alternate;
+    transform-origin:center;
+  }
+  @keyframes butterflyFlight{
+    0%{
+      transform:translate3d(0, 0, 0) rotate(-18deg) scale(.8);
+      opacity:0;
+    }
+    12%{opacity:1;}
+    35%{
+      transform:translate3d(calc(var(--butterfly-dx, 0px) * .25), calc(var(--butterfly-dy, 0px) * .25), 0) rotate(18deg) scale(1);
+      opacity:1;
+    }
+    65%{
+      transform:translate3d(calc(var(--butterfly-dx, 0px) * .65), calc(var(--butterfly-dy, 0px) * .8), 0) rotate(-26deg) scale(.96);
+      opacity:1;
+    }
+    100%{
+      transform:translate3d(var(--butterfly-dx, 0px), var(--butterfly-dy, 0px), 0) rotate(22deg) scale(.86);
+      opacity:0;
+    }
   }
   @keyframes sparkFall{
     0%{transform:translate3d(0,0,0) scale(.6) rotate(var(--spark-angle));opacity:1;}
@@ -692,6 +733,7 @@
 </head>
 <body>
 <div class="snow-layer" id="snowLayer" aria-hidden="true"></div>
+<div class="butterfly-layer" id="butterflyLayer" aria-hidden="true"></div>
 <div class="sleigh-sparks" id="sleighSparks" aria-hidden="true"></div>
 <div class="santa-sleigh" id="santaSleigh" aria-hidden="true">
   <img class="santa-sleigh-image" src="extra/trineo.png" alt="" />
@@ -786,6 +828,7 @@ const developerModeIndicator = document.getElementById('developerModeIndicator')
 const decemberToggle = document.getElementById('decemberToggle');
 const patriaEventToggles = [...document.querySelectorAll('.patria-event-toggle')];
 const snowLayer = document.getElementById('snowLayer');
+const butterflyLayer = document.getElementById('butterflyLayer');
 const santaSleigh = document.getElementById('santaSleigh');
 const sleighSparks = document.getElementById('sleighSparks');
 const alertImage = document.querySelector('.alert-image');
@@ -826,6 +869,7 @@ let modeImageTimer = null;
 let womenDayAssets = [];
 let womenDayImageIndex = 0;
 let womenDayImageTimer = null;
+let butterflyTimer = null;
 let decemberMode = false;
 let patriaMode = false;
 let womenDayMode = false;
@@ -867,6 +911,58 @@ function createSleighSparks() {
     spark.className = 'sleigh-spark';
     sleighSparks.appendChild(spark);
   }
+}
+
+function createButterfly() {
+  if (!butterflyLayer) return null;
+  const butterfly = document.createElement('img');
+  butterfly.className = 'butterfly';
+  butterfly.src = Math.random() > 0.5 ? 'fechas_patrias/mariposa01.gif' : 'fechas_patrias/mariposa02.gif';
+  const size = 44 + Math.random() * 52;
+  const left = Math.random() * 90;
+  const top = Math.random() * 70;
+  const dx = (Math.random() * 700) - 350;
+  const dy = (Math.random() * 320) - 150;
+
+  butterfly.style.setProperty('--butterfly-left', `${left}%`);
+  butterfly.style.setProperty('--butterfly-top', `${top}%`);
+  butterfly.style.setProperty('--butterfly-size', `${size}px`);
+  butterfly.style.setProperty('--butterfly-dx', `${dx}px`);
+  butterfly.style.setProperty('--butterfly-dy', `${dy}px`);
+  butterfly.style.setProperty('--butterfly-duration', `${12 + Math.random() * 12}s`);
+  butterfly.style.transform = 'translate3d(0,0,0)';
+  butterflyLayer.appendChild(butterfly);
+  return butterfly;
+}
+
+function startSeptemberButterflies() {
+  if (!butterflyLayer || !patriaMode || selectedPatriaEvent?.label !== '21 de septiembre') return;
+  clearInterval(butterflyTimer);
+  butterflyLayer.innerHTML = '';
+  const count = 8;
+  for (let index = 0; index < count; index += 1) {
+    createButterfly();
+  }
+  butterflyTimer = setInterval(() => {
+    if (!patriaMode || selectedPatriaEvent?.label !== '21 de septiembre') return;
+    if (butterflyLayer.children.length < 10) {
+      createButterfly();
+    }
+    if (Math.random() > 0.5) {
+      const butterfly = butterflyLayer.children[Math.floor(Math.random() * butterflyLayer.children.length)];
+      if (butterfly) {
+        butterfly.style.animation = 'none';
+        void butterfly.offsetWidth;
+        butterfly.style.animation = `butterflyFlight ${12 + Math.random() * 12}s ease-in-out infinite alternate`;
+      }
+    }
+  }, 1500);
+}
+
+function stopSeptemberButterflies() {
+  clearInterval(butterflyTimer);
+  butterflyTimer = null;
+  if (butterflyLayer) butterflyLayer.innerHTML = '';
 }
 
 function emitSleighSpark() {
@@ -987,6 +1083,7 @@ function getPatriaEvent(date) {
 function setPatriaMode(enabled, event = null) {
   patriaMode = enabled;
   document.body.classList.toggle('patria-mode', enabled);
+  document.body.classList.toggle('september-twenty-first-mode', enabled && event?.label === '21 de septiembre');
   patriaEventToggles.forEach((button) => {
     button.setAttribute('aria-pressed', String(enabled && button.dataset.eventDate === (event ? event.label : undefined)));
   });
@@ -996,11 +1093,14 @@ function updatePatriaBackground(event) {
   if (!event) {
     document.body.classList.remove('has-patria-background');
     document.body.classList.remove('october-twelfth-mode');
+    document.body.classList.remove('september-twenty-first-mode');
     document.body.style.background = '';
+    stopSeptemberButterflies();
     return;
   }
   const backgroundMap = {
     '8 de marzo': 'fechas_patrias/8%20de%20marzo%20-%20fondo.webp',
+    '21 de septiembre': 'fechas_patrias/21%20e%20septiembre%20-%20fondo.jpeg',
     '25 de mayo': 'fechas_patrias/25%20de%20mayo%20-%20fondo.jpg',
     '17 de junio': 'fechas_patrias/17%20de%20junio%20-%20fondo.webp',
     '12 de octubre': 'fechas_patrias/12%20de%20octubre%20-%20fondo.jpg'
@@ -1008,11 +1108,19 @@ function updatePatriaBackground(event) {
   const backgroundUrl = backgroundMap[event.label] || 'fechas_patrias/fondo.webp';
   document.body.classList.add('has-patria-background');
   document.body.classList.toggle('october-twelfth-mode', event.label === '12 de octubre');
+  document.body.classList.toggle('september-twenty-first-mode', event.label === '21 de septiembre');
   if (backgroundUrl) {
     const overlay = event.label === '8 de marzo'
       ? 'rgba(236,104,155,.28)'
-      : 'rgba(4,28,24,.28)';
+      : event.label === '21 de septiembre'
+        ? 'rgba(20,46,32,.22)'
+        : 'rgba(4,28,24,.28)';
     document.body.style.background = `linear-gradient(${overlay}, ${overlay}), url('${backgroundUrl}') center / cover fixed no-repeat`;
+  }
+  if (event.label === '21 de septiembre') {
+    startSeptemberButterflies();
+  } else {
+    stopSeptemberButterflies();
   }
 }
 
@@ -1021,7 +1129,7 @@ function updatePatriaMode() {
   selectedPatriaEvent = event;
   setPatriaMode(Boolean(event), event);
   updatePatriaBackground(event);
-  if (event && (event.label === '24 de marzo' || event.label === '2 de abril' || event.label === '8 de marzo' || event.label === '25 de mayo' || event.label === '17 de junio' || event.label === '12 de octubre')) {
+  if (event && (event.label === '24 de marzo' || event.label === '2 de abril' || event.label === '8 de marzo' || event.label === '21 de septiembre' || event.label === '25 de mayo' || event.label === '17 de junio' || event.label === '12 de octubre')) {
     setPatriaAsset(event);
   }
 }
@@ -1122,6 +1230,7 @@ async function setPatriaAsset(event) {
   const imageExtensions = {
     '24 de marzo': 'webp',
     '2 de abril': 'jpg',
+    '21 de septiembre': 'webp',
     '25 de mayo': 'jpg',
     '17 de junio': 'jpg',
     '12 de octubre': 'jpeg'
@@ -1374,7 +1483,7 @@ patriaEventToggles.forEach((button) => {
     }
     clearTimeout(womenDayImageTimer);
     updatePatriaBackground(selectedPatriaEvent);
-    if (selectedPatriaEvent && (selectedPatriaEvent.label === '24 de marzo' || selectedPatriaEvent.label === '2 de abril' || selectedPatriaEvent.label === '8 de marzo' || selectedPatriaEvent.label === '25 de mayo' || selectedPatriaEvent.label === '17 de junio' || selectedPatriaEvent.label === '12 de octubre')) {
+    if (selectedPatriaEvent && (selectedPatriaEvent.label === '24 de marzo' || selectedPatriaEvent.label === '2 de abril' || selectedPatriaEvent.label === '8 de marzo' || selectedPatriaEvent.label === '21 de septiembre' || selectedPatriaEvent.label === '25 de mayo' || selectedPatriaEvent.label === '17 de junio' || selectedPatriaEvent.label === '12 de octubre')) {
       setPatriaAsset(selectedPatriaEvent);
     } else if (!selectedPatriaEvent) {
       setWomenDayMode(false);
