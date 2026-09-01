@@ -865,9 +865,7 @@ const dateText = document.getElementById('dateText');
 const silenceAudio = new Audio(new URL('./sonido_hospital.mp3', document.baseURI).href);
 silenceAudio.preload = 'auto';
 silenceAudio.loop = true;
-const julioAudio = new Audio(new URL('./extra/Julio.mp3', document.baseURI).href);
-julioAudio.preload = 'auto';
-julioAudio.load();
+let julioAudio = null;
 
 const MODE_IMAGE_DIR = 'extra/';
 const MODE_MANIFEST_PATH = `${MODE_IMAGE_DIR}manifest.json`;
@@ -1455,26 +1453,38 @@ function updateSoundIndicator(alertActive, status) {
   soundToggle.classList.toggle('sound-error', isError);
 }
 
+function createJulioAudio() {
+  const audio = new Audio(new URL('./extra/Julio.mp3', document.baseURI).href);
+  audio.preload = 'auto';
+  audio.volume = 1;
+  audio.load();
+  return audio;
+}
+
 function hideJulioEvent() {
   clearTimeout(julioEventTimeout);
   julioEventTimeout = null;
   julioEvent.classList.remove('is-visible');
-  julioAudio.pause();
-  julioAudio.currentTime = 0;
+  if (julioAudio) {
+    julioAudio.pause();
+    julioAudio.currentTime = 0;
+    julioAudio = null;
+  }
 }
 
 function unlockJulioAudio() {
   if (julioAudioUnlocked) return;
-  julioAudio.muted = true;
-  const playback = julioAudio.play();
+  const audio = createJulioAudio();
+  audio.muted = true;
+  const playback = audio.play();
   if (!playback) return;
   playback.then(() => {
-    julioAudio.pause();
-    julioAudio.currentTime = 0;
-    julioAudio.muted = false;
+    audio.pause();
+    audio.currentTime = 0;
+    audio.muted = false;
     julioAudioUnlocked = true;
   }).catch(() => {
-    julioAudio.muted = false;
+    audio.muted = false;
   });
 }
 
@@ -1483,10 +1493,17 @@ function showJulioEvent() {
   julioEvent.classList.remove('is-visible');
   void julioEvent.offsetWidth;
   julioEvent.classList.add('is-visible');
-  julioAudio.currentTime = 0;
-  julioAudio.play().catch((error) => {
-    console.warn(`No se pudo reproducir extra/Julio.mp3: ${error.name}`);
-  });
+  if (julioAudio) {
+    julioAudio.pause();
+    julioAudio.currentTime = 0;
+  }
+  julioAudio = createJulioAudio();
+  const playback = julioAudio.play();
+  if (playback) {
+    playback.catch((error) => {
+      console.warn(`No se pudo reproducir extra/Julio.mp3: ${error.name}`);
+    });
+  }
   clearTimeout(julioEventTimeout);
   julioEventTimeout = setTimeout(hideJulioEvent, JULIO_EVENT_DURATION);
 }
