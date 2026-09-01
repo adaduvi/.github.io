@@ -795,6 +795,7 @@
     <span class="developer-tools-label">Pruebas visuales</span>
     <button class="december-toggle" id="decemberToggle" type="button" aria-pressed="false">Modo diciembre</button>
     <button class="december-toggle" id="julioTestButton" type="button">Mostrar Julio</button>
+    <button class="december-toggle" id="barbyTestButton" type="button">Mostrar Barby</button>
     <div class="patria-events" id="patriaEvents" aria-label="Eventos patrios">
       <button class="patria-event-toggle" type="button" data-event-date="8 de marzo" aria-pressed="false">8 de marzo - Día de la Mujer</button>
       <button class="patria-event-toggle" type="button" data-event-date="24 de marzo" aria-pressed="false">24 de marzo</button>
@@ -852,6 +853,7 @@ const soundToggle = document.getElementById('soundToggle');
 const developerModeIndicator = document.getElementById('developerModeIndicator');
 const decemberToggle = document.getElementById('decemberToggle');
 const julioTestButton = document.getElementById('julioTestButton');
+const barbyTestButton = document.getElementById('barbyTestButton');
 const patriaEventToggles = [...document.querySelectorAll('.patria-event-toggle')];
 const snowLayer = document.getElementById('snowLayer');
 const butterflyLayer = document.getElementById('butterflyLayer');
@@ -915,9 +917,12 @@ let sleighSparkTimer = null;
 let julioEventTimer = null;
 let julioEventTimeout = null;
 let julioAudioUnlocked = false;
+let activeSpecialEvent = null;
+let activeSpecialAudio = null;
 
 const JULIO_EVENT_INTERVAL = 10 * 60 * 1000;
 const JULIO_EVENT_DURATION = 2000;
+const SPECIAL_EVENT_PROBABILITY = 0.01;
 
 function isDecember(date) {
   return date.getMonth() === 11 && date.getDate() >= 1 && date.getDate() <= 31;
@@ -1453,8 +1458,8 @@ function updateSoundIndicator(alertActive, status) {
   soundToggle.classList.toggle('sound-error', isError);
 }
 
-function createJulioAudio() {
-  const audio = new Audio(new URL('./extra/Julio.mp3', document.baseURI).href);
+function createSpecialAudio(fileName) {
+  const audio = new Audio(new URL(`./extra/${fileName}.mp3`, document.baseURI).href);
   audio.preload = 'auto';
   audio.volume = 1;
   audio.load();
@@ -1465,16 +1470,18 @@ function hideJulioEvent() {
   clearTimeout(julioEventTimeout);
   julioEventTimeout = null;
   julioEvent.classList.remove('is-visible');
-  if (julioAudio) {
-    julioAudio.pause();
-    julioAudio.currentTime = 0;
-    julioAudio = null;
+  if (activeSpecialAudio) {
+    activeSpecialAudio.pause();
+    activeSpecialAudio.currentTime = 0;
+    activeSpecialAudio = null;
   }
+  activeSpecialEvent = null;
+  julioEvent.src = 'extra/Julio.png';
 }
 
 function unlockJulioAudio() {
   if (julioAudioUnlocked) return;
-  const audio = createJulioAudio();
+  const audio = createSpecialAudio('Julio');
   audio.muted = true;
   const playback = audio.play();
   if (!playback) return;
@@ -1488,29 +1495,45 @@ function unlockJulioAudio() {
   });
 }
 
-function showJulioEvent() {
+function showSpecialEvent(fileName) {
   if (!julioEvent) return;
+  if (julioEvent.classList.contains('is-visible')) return;
+
   julioEvent.classList.remove('is-visible');
   void julioEvent.offsetWidth;
+  julioEvent.src = `extra/${fileName}.png`;
   julioEvent.classList.add('is-visible');
-  if (julioAudio) {
-    julioAudio.pause();
-    julioAudio.currentTime = 0;
+
+  if (activeSpecialAudio) {
+    activeSpecialAudio.pause();
+    activeSpecialAudio.currentTime = 0;
   }
-  julioAudio = createJulioAudio();
-  const playback = julioAudio.play();
+
+  activeSpecialEvent = fileName;
+  activeSpecialAudio = createSpecialAudio(fileName);
+  const playback = activeSpecialAudio.play();
   if (playback) {
     playback.catch((error) => {
-      console.warn(`No se pudo reproducir extra/Julio.mp3: ${error.name}`);
+      console.warn(`No se pudo reproducir extra/${fileName}.mp3: ${error.name}`);
     });
   }
+
   clearTimeout(julioEventTimeout);
   julioEventTimeout = setTimeout(hideJulioEvent, JULIO_EVENT_DURATION);
 }
 
+function showJulioEvent() {
+  showSpecialEvent('Julio');
+}
+
+function showBarbyEvent() {
+  showSpecialEvent('Barby');
+}
+
 function tryJulioEvent() {
-  if (alertWrapper.style.display !== 'none' || Math.random() >= .01) return;
-  showJulioEvent();
+  if (alertWrapper.style.display !== 'none') return;
+  if (Math.random() < SPECIAL_EVENT_PROBABILITY) showJulioEvent();
+  if (Math.random() < SPECIAL_EVENT_PROBABILITY) showBarbyEvent();
 }
 
 function startJulioEventSchedule() {
@@ -1572,6 +1595,11 @@ decemberToggle.addEventListener('click', () => {
 julioTestButton.addEventListener('click', () => {
   unlockJulioAudio();
   showJulioEvent();
+});
+
+barbyTestButton.addEventListener('click', () => {
+  unlockJulioAudio();
+  showBarbyEvent();
 });
 
 document.addEventListener('pointerdown', unlockJulioAudio, { passive: true });
