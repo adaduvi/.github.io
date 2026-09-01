@@ -705,6 +705,28 @@
     margin:0 0 .8em;
   }
 
+  .julio-event{
+    position:fixed;
+    right:0;
+    bottom:0;
+    z-index:6;
+    width:min(320px, 55vw);
+    max-height:55vh;
+    object-fit:contain;
+    object-position:bottom right;
+    pointer-events:none;
+    transform:translateX(100%);
+    filter:drop-shadow(-10px 8px 20px rgba(0,0,0,.35));
+  }
+  .julio-event.is-visible{
+    animation:julioSlide 2s ease-in-out forwards;
+  }
+  @keyframes julioSlide{
+    0%{transform:translateX(100%);}
+    35%, 65%{transform:translateX(0);}
+    100%{transform:translateX(100%);}
+  }
+
   @media (max-width:1400px){ .grid{grid-template-columns:repeat(3,1fr);} }
   @media (max-width:1000px){ .grid{grid-template-columns:repeat(2,1fr);} .name{font-size:26px;} }
   @media (max-width:700px){
@@ -728,6 +750,7 @@
     .card-sheen::before{animation:none;display:none;}
     .developer-mode-indicator{animation:none;}
     .snowflake{animation:none;}
+    .julio-event.is-visible{animation:none;transform:translateX(0);}
   }
 </style>
 </head>
@@ -738,6 +761,7 @@
 <div class="santa-sleigh" id="santaSleigh" aria-hidden="true">
   <img class="santa-sleigh-image" src="extra/trineo.png" alt="" />
 </div>
+<img class="julio-event" id="julioEvent" src="extra/Julio.png" alt="" aria-hidden="true" />
 <div class="wrap">
   <header>
     <div class="brand">
@@ -770,6 +794,7 @@
   <section class="developer-tools" id="developerTools" aria-label="Herramientas de desarrollador">
     <span class="developer-tools-label">Pruebas visuales</span>
     <button class="december-toggle" id="decemberToggle" type="button" aria-pressed="false">Modo diciembre</button>
+    <button class="december-toggle" id="julioTestButton" type="button">Mostrar Julio</button>
     <div class="patria-events" id="patriaEvents" aria-label="Eventos patrios">
       <button class="patria-event-toggle" type="button" data-event-date="8 de marzo" aria-pressed="false">8 de marzo - Día de la Mujer</button>
       <button class="patria-event-toggle" type="button" data-event-date="24 de marzo" aria-pressed="false">24 de marzo</button>
@@ -826,11 +851,13 @@ const modeToggle = document.querySelector('.mode-toggle');
 const soundToggle = document.getElementById('soundToggle');
 const developerModeIndicator = document.getElementById('developerModeIndicator');
 const decemberToggle = document.getElementById('decemberToggle');
+const julioTestButton = document.getElementById('julioTestButton');
 const patriaEventToggles = [...document.querySelectorAll('.patria-event-toggle')];
 const snowLayer = document.getElementById('snowLayer');
 const butterflyLayer = document.getElementById('butterflyLayer');
 const santaSleigh = document.getElementById('santaSleigh');
 const sleighSparks = document.getElementById('sleighSparks');
+const julioEvent = document.getElementById('julioEvent');
 const alertImage = document.querySelector('.alert-image');
 const alertCaption = document.querySelector('.alert-caption');
 const timeText = document.getElementById('timeText');
@@ -838,6 +865,8 @@ const dateText = document.getElementById('dateText');
 const silenceAudio = new Audio(new URL('./sonido_hospital.mp3', document.baseURI).href);
 silenceAudio.preload = 'auto';
 silenceAudio.loop = true;
+const julioAudio = new Audio(new URL('./extra/Julio.mp3', document.baseURI).href);
+julioAudio.preload = 'auto';
 
 const MODE_IMAGE_DIR = 'extra/';
 const MODE_MANIFEST_PATH = `${MODE_IMAGE_DIR}manifest.json`;
@@ -884,6 +913,11 @@ let sleighTargetY = 0;
 let sleighDirection = 1;
 let sleighInitialized = false;
 let sleighSparkTimer = null;
+let julioEventTimer = null;
+let julioEventTimeout = null;
+
+const JULIO_EVENT_INTERVAL = 10 * 60 * 1000;
+const JULIO_EVENT_DURATION = 2000;
 
 function isDecember(date) {
   return date.getMonth() === 11 && date.getDate() >= 1 && date.getDate() <= 31;
@@ -1419,6 +1453,35 @@ function updateSoundIndicator(alertActive, status) {
   soundToggle.classList.toggle('sound-error', isError);
 }
 
+function hideJulioEvent() {
+  clearTimeout(julioEventTimeout);
+  julioEventTimeout = null;
+  julioEvent.classList.remove('is-visible');
+  julioAudio.pause();
+  julioAudio.currentTime = 0;
+}
+
+function showJulioEvent() {
+  if (!julioEvent) return;
+  julioEvent.classList.remove('is-visible');
+  void julioEvent.offsetWidth;
+  julioEvent.classList.add('is-visible');
+  julioAudio.currentTime = 0;
+  julioAudio.play().catch(() => {});
+  clearTimeout(julioEventTimeout);
+  julioEventTimeout = setTimeout(hideJulioEvent, JULIO_EVENT_DURATION);
+}
+
+function tryJulioEvent() {
+  if (alertWrapper.style.display !== 'none' || Math.random() >= .01) return;
+  showJulioEvent();
+}
+
+function startJulioEventSchedule() {
+  clearInterval(julioEventTimer);
+  julioEventTimer = setInterval(tryJulioEvent, JULIO_EVENT_INTERVAL);
+}
+
 silenceAudio.addEventListener('playing', () => {
   updateSoundIndicator(true, 'playing');
 });
@@ -1467,6 +1530,10 @@ modeToggle.addEventListener('click', async () => {
 
 decemberToggle.addEventListener('click', () => {
   if (!modeActive) setDecemberMode(!decemberMode);
+});
+
+julioTestButton.addEventListener('click', () => {
+  showJulioEvent();
 });
 
 patriaEventToggles.forEach((button) => {
@@ -1641,6 +1708,7 @@ function render() {
   });
 
   alertWrapper.style.display = anyBusy ? 'flex' : 'none';
+  if (anyBusy) hideJulioEvent();
   if (anyBusy && !alertWasActive) setSoundEnabled(true);
   alertWasActive = anyBusy;
   updateSoundPlayback(anyBusy);
@@ -1665,6 +1733,7 @@ function updateDateTime() {
 
 render();
 updateDateTime();
+startJulioEventSchedule();
 setInterval(updateDateTime, 1000);
 </script>
 </body>
