@@ -874,7 +874,7 @@ silenceAudio.loop = true;
 const SPECIAL_EVENT_NAMES = ['Julio', 'Barby', 'AgustinaR'];
 const SPECIAL_EVENT_PROBABILITY = 0.55;
 const SPECIAL_EVENT_INTERVAL = 10 * 60 * 1000;
- const SPECIAL_EVENT_DURATION = 2000;
+const SPECIAL_EVENT_DURATION = 2000;
 
 const MODE_IMAGE_DIR = 'extra/';
 const MODE_MANIFEST_PATH = `${MODE_IMAGE_DIR}manifest.json`;
@@ -924,6 +924,8 @@ let sleighSparkTimer = null;
 let specialEventTimer = null;
 let specialEventTimeout = null;
 let specialEventAudio = null;
+let specialEventRequest = 0;
+let anyBusy = false;
 
 function isDecember(date) {
   return date.getMonth() === 11 && date.getDate() >= 1 && date.getDate() <= 31;
@@ -1463,12 +1465,14 @@ function preloadSpecialEvents() {
   });
 }
 
-function hideSpecialEvent() {
+function hideSpecialEvent(stopAudio = true) {
+  specialEventRequest += 1;
   clearTimeout(specialEventTimeout);
   specialEventTimeout = null;
+  specialEvent.onload = null;
   specialEvent.classList.remove('is-visible');
   specialEvent.style.visibility = 'hidden';
-  if (specialEventAudio) {
+  if (stopAudio && specialEventAudio) {
     specialEventAudio.pause();
     specialEventAudio.currentTime = 0;
     specialEventAudio = null;
@@ -1476,10 +1480,12 @@ function hideSpecialEvent() {
 }
 
 function showSpecialEvent(name) {
-  if (!specialEvent || alertWrapper.style.display !== 'none') return;
+  if (!specialEvent || anyBusy) return;
   const imageUrl = `extra/${name}.png`;
   const audioUrl = `extra/${name}.mp3`;
+  const requestId = ++specialEventRequest;
   const showImage = () => {
+    if (requestId !== specialEventRequest || anyBusy) return;
     specialEvent.onload = null;
     specialEvent.src = imageUrl;
     void specialEvent.offsetWidth;
@@ -1489,12 +1495,9 @@ function showSpecialEvent(name) {
 
   specialEvent.classList.remove('is-visible');
   specialEvent.style.visibility = 'hidden';
-  if (specialEvent.src === new URL(imageUrl, document.baseURI).href) {
-    showImage();
-  } else {
-    specialEvent.onload = showImage;
-    specialEvent.src = imageUrl;
-  }
+  specialEvent.src = imageUrl;
+  if (specialEvent.complete && specialEvent.naturalWidth > 0) showImage();
+  else specialEvent.onload = showImage;
 
   if (specialEventAudio) specialEventAudio.pause();
   specialEventAudio = new Audio(new URL(audioUrl, document.baseURI).href);
@@ -1504,14 +1507,13 @@ function showSpecialEvent(name) {
     console.warn(`No se pudo reproducir ${audioUrl}: ${error.name}`);
   });
   clearTimeout(specialEventTimeout);
-  specialEventTimeout = setTimeout(hideSpecialEvent, SPECIAL_EVENT_DURATION);
+  specialEventTimeout = setTimeout(() => hideSpecialEvent(false), SPECIAL_EVENT_DURATION);
 }
 
 function trySpecialEvent() {
-  if (alertWrapper.style.display !== 'none') return;
-  SPECIAL_EVENT_NAMES.forEach((name) => {
-    if (Math.random() < SPECIAL_EVENT_PROBABILITY) showSpecialEvent(name);
-  });
+  if (anyBusy) return;
+  const selectedEvent = SPECIAL_EVENT_NAMES.find(() => Math.random() < SPECIAL_EVENT_PROBABILITY);
+  if (selectedEvent) showSpecialEvent(selectedEvent);
 }
 
 function startSpecialEventSchedule() {
@@ -1695,7 +1697,7 @@ function render() {
   const activeCard = document.activeElement && document.activeElement.closest('.card');
   const focusedRoomName = activeCard ? activeCard.dataset.roomName : undefined;
   grid.innerHTML = '';
-  let anyBusy = false;
+  anyBusy = false;
 
   const rooms = [...roomsData].sort((a, b) => {
     const aName = roomDisplayName(a.name);
