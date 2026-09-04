@@ -705,6 +705,29 @@
     margin:0 0 .8em;
   }
 
+  .special-event{
+    position:fixed;
+    right:0;
+    bottom:0;
+    z-index:6;
+    width:min(320px, 55vw);
+    max-height:55vh;
+    object-fit:contain;
+    object-position:bottom right;
+    pointer-events:none;
+    visibility:hidden;
+    transform:translateX(100%);
+    filter:drop-shadow(-10px 8px 20px rgba(0,0,0,.35));
+  }
+  .special-event.is-visible{
+    animation:specialEventSlide 2s ease-in-out forwards;
+  }
+  @keyframes specialEventSlide{
+    0%{transform:translateX(100%);}
+    35%,65%{transform:translateX(0);}
+    100%{transform:translateX(100%);}
+  }
+
   @media (max-width:1400px){ .grid{grid-template-columns:repeat(3,1fr);} }
   @media (max-width:1000px){ .grid{grid-template-columns:repeat(2,1fr);} .name{font-size:26px;} }
   @media (max-width:700px){
@@ -728,6 +751,7 @@
     .card-sheen::before{animation:none;display:none;}
     .developer-mode-indicator{animation:none;}
     .snowflake{animation:none;}
+    .special-event.is-visible{animation:none;transform:translateX(0);}
   }
 </style>
 </head>
@@ -738,6 +762,7 @@
 <div class="santa-sleigh" id="santaSleigh" aria-hidden="true">
   <img class="santa-sleigh-image" src="extra/trineo.png" alt="" />
 </div>
+<img class="special-event" id="specialEvent" src="extra/Julio.png" alt="" aria-hidden="true" />
 <div class="wrap">
   <header>
     <div class="brand">
@@ -750,7 +775,7 @@
       </button>
       <div class="brand-text">
         <h1>Centro de Simulación <span class="developer-mode-indicator" id="developerModeIndicator">Modo desarrollador</span></h1>
-        <span>Panel de estado de salas - version 0.2.8</span>
+        <span>Panel de estado de salas - version 0.2.9</span>
       </div>
     </div>
     <button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false" aria-label="Activar sonido" title="Activar sonido">
@@ -770,6 +795,9 @@
   <section class="developer-tools" id="developerTools" aria-label="Herramientas de desarrollador">
     <span class="developer-tools-label">Pruebas visuales</span>
     <button class="december-toggle" id="decemberToggle" type="button" aria-pressed="false">Modo diciembre</button>
+    <button class="december-toggle" id="julioTestButton" type="button">Mostrar Julio</button>
+    <button class="december-toggle" id="barbyTestButton" type="button">Mostrar Barby</button>
+    <button class="december-toggle" id="agustinaRTestButton" type="button">Mostrar AgustinaR</button>
     <div class="patria-events" id="patriaEvents" aria-label="Eventos patrios">
       <button class="patria-event-toggle" type="button" data-event-date="8 de marzo" aria-pressed="false">8 de marzo - Día de la Mujer</button>
       <button class="patria-event-toggle" type="button" data-event-date="24 de marzo" aria-pressed="false">24 de marzo</button>
@@ -826,11 +854,15 @@ const modeToggle = document.querySelector('.mode-toggle');
 const soundToggle = document.getElementById('soundToggle');
 const developerModeIndicator = document.getElementById('developerModeIndicator');
 const decemberToggle = document.getElementById('decemberToggle');
+const julioTestButton = document.getElementById('julioTestButton');
+const barbyTestButton = document.getElementById('barbyTestButton');
+const agustinaRTestButton = document.getElementById('agustinaRTestButton');
 const patriaEventToggles = [...document.querySelectorAll('.patria-event-toggle')];
 const snowLayer = document.getElementById('snowLayer');
 const butterflyLayer = document.getElementById('butterflyLayer');
 const santaSleigh = document.getElementById('santaSleigh');
 const sleighSparks = document.getElementById('sleighSparks');
+const specialEvent = document.getElementById('specialEvent');
 const alertImage = document.querySelector('.alert-image');
 const alertCaption = document.querySelector('.alert-caption');
 const timeText = document.getElementById('timeText');
@@ -838,6 +870,11 @@ const dateText = document.getElementById('dateText');
 const silenceAudio = new Audio(new URL('./sonido_hospital.mp3', document.baseURI).href);
 silenceAudio.preload = 'auto';
 silenceAudio.loop = true;
+
+const SPECIAL_EVENT_NAMES = ['Julio', 'Barby', 'AgustinaR'];
+const SPECIAL_EVENT_PROBABILITY = 0.15;
+const SPECIAL_EVENT_INTERVAL = 10 * 60 * 1000;
+ const SPECIAL_EVENT_DURATION = 2000;
 
 const MODE_IMAGE_DIR = 'extra/';
 const MODE_MANIFEST_PATH = `${MODE_IMAGE_DIR}manifest.json`;
@@ -884,6 +921,9 @@ let sleighTargetY = 0;
 let sleighDirection = 1;
 let sleighInitialized = false;
 let sleighSparkTimer = null;
+let specialEventTimer = null;
+let specialEventTimeout = null;
+let specialEventAudio = null;
 
 function isDecember(date) {
   return date.getMonth() === 11 && date.getDate() >= 1 && date.getDate() <= 31;
@@ -1416,6 +1456,69 @@ function updateSoundIndicator(alertActive, status) {
   soundToggle.classList.toggle('sound-error', isError);
 }
 
+function preloadSpecialEvents() {
+  SPECIAL_EVENT_NAMES.forEach((name) => {
+    const image = new Image();
+    image.src = `extra/${name}.png`;
+  });
+}
+
+function hideSpecialEvent() {
+  clearTimeout(specialEventTimeout);
+  specialEventTimeout = null;
+  specialEvent.classList.remove('is-visible');
+  specialEvent.style.visibility = 'hidden';
+  if (specialEventAudio) {
+    specialEventAudio.pause();
+    specialEventAudio.currentTime = 0;
+    specialEventAudio = null;
+  }
+}
+
+function showSpecialEvent(name) {
+  if (!specialEvent || alertWrapper.style.display !== 'none') return;
+  const imageUrl = `extra/${name}.png`;
+  const audioUrl = `extra/${name}.mp3`;
+  const showImage = () => {
+    specialEvent.onload = null;
+    specialEvent.src = imageUrl;
+    void specialEvent.offsetWidth;
+    specialEvent.style.visibility = 'visible';
+    specialEvent.classList.add('is-visible');
+  };
+
+  specialEvent.classList.remove('is-visible');
+  specialEvent.style.visibility = 'hidden';
+  if (specialEvent.src === new URL(imageUrl, document.baseURI).href) {
+    showImage();
+  } else {
+    specialEvent.onload = showImage;
+    specialEvent.src = imageUrl;
+  }
+
+  if (specialEventAudio) specialEventAudio.pause();
+  specialEventAudio = new Audio(new URL(audioUrl, document.baseURI).href);
+  specialEventAudio.preload = 'auto';
+  specialEventAudio.volume = 1;
+  specialEventAudio.play().catch((error) => {
+    console.warn(`No se pudo reproducir ${audioUrl}: ${error.name}`);
+  });
+  clearTimeout(specialEventTimeout);
+  specialEventTimeout = setTimeout(hideSpecialEvent, SPECIAL_EVENT_DURATION);
+}
+
+function trySpecialEvent() {
+  if (alertWrapper.style.display !== 'none') return;
+  SPECIAL_EVENT_NAMES.forEach((name) => {
+    if (Math.random() < SPECIAL_EVENT_PROBABILITY) showSpecialEvent(name);
+  });
+}
+
+function startSpecialEventSchedule() {
+  clearInterval(specialEventTimer);
+  specialEventTimer = setInterval(trySpecialEvent, SPECIAL_EVENT_INTERVAL);
+}
+
 silenceAudio.addEventListener('playing', () => {
   updateSoundIndicator(true, 'playing');
 });
@@ -1465,6 +1568,10 @@ modeToggle.addEventListener('click', async () => {
 decemberToggle.addEventListener('click', () => {
   if (!modeActive) setDecemberMode(!decemberMode);
 });
+
+julioTestButton.addEventListener('click', () => showSpecialEvent('Julio'));
+barbyTestButton.addEventListener('click', () => showSpecialEvent('Barby'));
+agustinaRTestButton.addEventListener('click', () => showSpecialEvent('AgustinaR'));
 
 patriaEventToggles.forEach((button) => {
   button.addEventListener('click', () => {
@@ -1638,6 +1745,7 @@ function render() {
   });
 
   alertWrapper.style.display = anyBusy ? 'flex' : 'none';
+  if (anyBusy) hideSpecialEvent();
   if (anyBusy && !alertWasActive) setSoundEnabled(true);
   alertWasActive = anyBusy;
   updateSoundPlayback(anyBusy);
@@ -1662,6 +1770,8 @@ function updateDateTime() {
 
 render();
 updateDateTime();
+preloadSpecialEvents();
+startSpecialEventSchedule();
 setInterval(updateDateTime, 1000);
 </script>
 </body>
