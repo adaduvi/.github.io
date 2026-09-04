@@ -705,28 +705,6 @@
     margin:0 0 .8em;
   }
 
-  .julio-event{
-    position:fixed;
-    right:0;
-    bottom:0;
-    z-index:6;
-    width:min(320px, 55vw);
-    max-height:55vh;
-    object-fit:contain;
-    object-position:bottom right;
-    pointer-events:none;
-    transform:translateX(100%);
-    filter:drop-shadow(-10px 8px 20px rgba(0,0,0,.35));
-  }
-  .julio-event.is-visible{
-    animation:julioSlide 2s ease-in-out forwards;
-  }
-  @keyframes julioSlide{
-    0%{transform:translateX(100%);}
-    35%, 65%{transform:translateX(0);}
-    100%{transform:translateX(100%);}
-  }
-
   @media (max-width:1400px){ .grid{grid-template-columns:repeat(3,1fr);} }
   @media (max-width:1000px){ .grid{grid-template-columns:repeat(2,1fr);} .name{font-size:26px;} }
   @media (max-width:700px){
@@ -750,7 +728,6 @@
     .card-sheen::before{animation:none;display:none;}
     .developer-mode-indicator{animation:none;}
     .snowflake{animation:none;}
-    .julio-event.is-visible{animation:none;transform:translateX(0);}
   }
 </style>
 </head>
@@ -761,7 +738,6 @@
 <div class="santa-sleigh" id="santaSleigh" aria-hidden="true">
   <img class="santa-sleigh-image" src="extra/trineo.png" alt="" />
 </div>
-<img class="julio-event" id="julioEvent" src="extra/Julio.png" alt="" aria-hidden="true" />
 <div class="wrap">
   <header>
     <div class="brand">
@@ -794,8 +770,6 @@
   <section class="developer-tools" id="developerTools" aria-label="Herramientas de desarrollador">
     <span class="developer-tools-label">Pruebas visuales</span>
     <button class="december-toggle" id="decemberToggle" type="button" aria-pressed="false">Modo diciembre</button>
-    <button class="december-toggle" id="julioTestButton" type="button">Mostrar Julio</button>
-    <button class="december-toggle" id="barbyTestButton" type="button">Mostrar Barby</button>
     <div class="patria-events" id="patriaEvents" aria-label="Eventos patrios">
       <button class="patria-event-toggle" type="button" data-event-date="8 de marzo" aria-pressed="false">8 de marzo - Día de la Mujer</button>
       <button class="patria-event-toggle" type="button" data-event-date="24 de marzo" aria-pressed="false">24 de marzo</button>
@@ -852,14 +826,11 @@ const modeToggle = document.querySelector('.mode-toggle');
 const soundToggle = document.getElementById('soundToggle');
 const developerModeIndicator = document.getElementById('developerModeIndicator');
 const decemberToggle = document.getElementById('decemberToggle');
-const julioTestButton = document.getElementById('julioTestButton');
-const barbyTestButton = document.getElementById('barbyTestButton');
 const patriaEventToggles = [...document.querySelectorAll('.patria-event-toggle')];
 const snowLayer = document.getElementById('snowLayer');
 const butterflyLayer = document.getElementById('butterflyLayer');
 const santaSleigh = document.getElementById('santaSleigh');
 const sleighSparks = document.getElementById('sleighSparks');
-const julioEvent = document.getElementById('julioEvent');
 const alertImage = document.querySelector('.alert-image');
 const alertCaption = document.querySelector('.alert-caption');
 const timeText = document.getElementById('timeText');
@@ -867,7 +838,6 @@ const dateText = document.getElementById('dateText');
 const silenceAudio = new Audio(new URL('./sonido_hospital.mp3', document.baseURI).href);
 silenceAudio.preload = 'auto';
 silenceAudio.loop = true;
-let julioAudio = null;
 
 const MODE_IMAGE_DIR = 'extra/';
 const MODE_MANIFEST_PATH = `${MODE_IMAGE_DIR}manifest.json`;
@@ -914,15 +884,6 @@ let sleighTargetY = 0;
 let sleighDirection = 1;
 let sleighInitialized = false;
 let sleighSparkTimer = null;
-let julioEventTimer = null;
-let julioEventTimeout = null;
-let julioAudioUnlocked = false;
-let activeSpecialEvent = null;
-let activeSpecialAudio = null;
-
-const JULIO_EVENT_INTERVAL = 10 * 60 * 1000;
-const JULIO_EVENT_DURATION = 2000;
-const SPECIAL_EVENT_PROBABILITY = 0.01;
 
 function isDecember(date) {
   return date.getMonth() === 11 && date.getDate() >= 1 && date.getDate() <= 31;
@@ -978,15 +939,12 @@ function startSeptemberButterflies() {
   if (!butterflyLayer || !patriaMode || selectedPatriaEvent?.label !== '21 de septiembre') return;
   clearInterval(butterflyTimer);
   butterflyLayer.innerHTML = '';
-  const count = 8;
+  const count = 4;
   for (let index = 0; index < count; index += 1) {
     createButterfly();
   }
   butterflyTimer = setInterval(() => {
     if (!patriaMode || selectedPatriaEvent?.label !== '21 de septiembre') return;
-    if (butterflyLayer.children.length < 10) {
-      createButterfly();
-    }
     if (Math.random() > 0.5) {
       const butterfly = butterflyLayer.children[Math.floor(Math.random() * butterflyLayer.children.length)];
       if (butterfly) {
@@ -1458,89 +1416,6 @@ function updateSoundIndicator(alertActive, status) {
   soundToggle.classList.toggle('sound-error', isError);
 }
 
-function createSpecialAudio(fileName) {
-  const audio = new Audio(new URL(`./extra/${fileName}.mp3`, document.baseURI).href);
-  audio.preload = 'auto';
-  audio.volume = 1;
-  audio.load();
-  return audio;
-}
-
-function hideJulioEvent() {
-  clearTimeout(julioEventTimeout);
-  julioEventTimeout = null;
-  julioEvent.classList.remove('is-visible');
-  if (activeSpecialAudio) {
-    activeSpecialAudio.pause();
-    activeSpecialAudio.currentTime = 0;
-    activeSpecialAudio = null;
-  }
-  activeSpecialEvent = null;
-  julioEvent.src = 'extra/Julio.png';
-}
-
-function unlockJulioAudio() {
-  if (julioAudioUnlocked) return;
-  const audio = createSpecialAudio('Julio');
-  audio.muted = true;
-  const playback = audio.play();
-  if (!playback) return;
-  playback.then(() => {
-    audio.pause();
-    audio.currentTime = 0;
-    audio.muted = false;
-    julioAudioUnlocked = true;
-  }).catch(() => {
-    audio.muted = false;
-  });
-}
-
-function showSpecialEvent(fileName) {
-  if (!julioEvent) return;
-  if (julioEvent.classList.contains('is-visible')) return;
-
-  julioEvent.classList.remove('is-visible');
-  void julioEvent.offsetWidth;
-  julioEvent.src = `extra/${fileName}.png`;
-  julioEvent.classList.add('is-visible');
-
-  if (activeSpecialAudio) {
-    activeSpecialAudio.pause();
-    activeSpecialAudio.currentTime = 0;
-  }
-
-  activeSpecialEvent = fileName;
-  activeSpecialAudio = createSpecialAudio(fileName);
-  const playback = activeSpecialAudio.play();
-  if (playback) {
-    playback.catch((error) => {
-      console.warn(`No se pudo reproducir extra/${fileName}.mp3: ${error.name}`);
-    });
-  }
-
-  clearTimeout(julioEventTimeout);
-  julioEventTimeout = setTimeout(hideJulioEvent, JULIO_EVENT_DURATION);
-}
-
-function showJulioEvent() {
-  showSpecialEvent('Julio');
-}
-
-function showBarbyEvent() {
-  showSpecialEvent('Barby');
-}
-
-function tryJulioEvent() {
-  if (alertWrapper.style.display !== 'none') return;
-  if (Math.random() < SPECIAL_EVENT_PROBABILITY) showJulioEvent();
-  if (Math.random() < SPECIAL_EVENT_PROBABILITY) showBarbyEvent();
-}
-
-function startJulioEventSchedule() {
-  clearInterval(julioEventTimer);
-  julioEventTimer = setInterval(tryJulioEvent, JULIO_EVENT_INTERVAL);
-}
-
 silenceAudio.addEventListener('playing', () => {
   updateSoundIndicator(true, 'playing');
 });
@@ -1558,7 +1433,6 @@ silenceAudio.addEventListener('error', () => {
 });
 
 soundToggle.addEventListener('click', () => {
-  unlockJulioAudio();
   setSoundEnabled(!soundEnabled);
   updateSoundPlayback(alertWrapper.style.display !== 'none');
 });
@@ -1591,18 +1465,6 @@ modeToggle.addEventListener('click', async () => {
 decemberToggle.addEventListener('click', () => {
   if (!modeActive) setDecemberMode(!decemberMode);
 });
-
-julioTestButton.addEventListener('click', () => {
-  unlockJulioAudio();
-  showJulioEvent();
-});
-
-barbyTestButton.addEventListener('click', () => {
-  unlockJulioAudio();
-  showBarbyEvent();
-});
-
-document.addEventListener('pointerdown', unlockJulioAudio, { passive: true });
 
 patriaEventToggles.forEach((button) => {
   button.addEventListener('click', () => {
@@ -1776,7 +1638,6 @@ function render() {
   });
 
   alertWrapper.style.display = anyBusy ? 'flex' : 'none';
-  if (anyBusy) hideJulioEvent();
   if (anyBusy && !alertWasActive) setSoundEnabled(true);
   alertWasActive = anyBusy;
   updateSoundPlayback(anyBusy);
@@ -1801,7 +1662,6 @@ function updateDateTime() {
 
 render();
 updateDateTime();
-startJulioEventSchedule();
 setInterval(updateDateTime, 1000);
 </script>
 </body>
