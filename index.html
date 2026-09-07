@@ -103,6 +103,24 @@
     opacity:.96;
   }
   .santa-sleigh-image{display:block;width:100%;height:100%;object-fit:contain;}
+  .september-airplane{
+    position:fixed;
+    z-index:4;
+    width:clamp(60px, 7vw, 125px);
+    max-width:24vw;
+    aspect-ratio:2640 / 2750;
+    height:auto;
+    pointer-events:none;
+    display:none;
+    opacity:0;
+    transform:translate(-50%, -50%);
+    filter:drop-shadow(0 8px 8px rgba(0,20,12,.3));
+    will-change:left, top, transform;
+  }
+  body.september-eleventh-mode .september-airplane{
+    display:block;
+    opacity:.5;
+  }
   .sleigh-sparks{
     position:fixed;inset:0;z-index:3;
     pointer-events:none;overflow:hidden;display:none;
@@ -676,7 +694,9 @@
     overflow:hidden;
   }
   body.women-day-mode .alert-caption,
-  body.october-twelfth-mode .alert-caption{
+  body.october-twelfth-mode .alert-caption,
+  body.september-eleventh-mode .alert-caption,
+  body.september-twenty-first-mode .alert-caption{
     color:#111827;
   }
   .alert-caption-title{
@@ -751,6 +771,7 @@
     .card-sheen::before{animation:none;display:none;}
     .developer-mode-indicator{animation:none;}
     .snowflake{animation:none;}
+    .september-airplane{transition:none;}
     .special-event.is-visible{animation:none;transform:translateX(0);}
   }
 </style>
@@ -762,6 +783,7 @@
 <div class="santa-sleigh" id="santaSleigh" aria-hidden="true">
   <img class="santa-sleigh-image" src="extra/trineo.png" alt="" />
 </div>
+<img class="september-airplane" id="septemberAirplane" src="fechas_patrias/11%20de%20septiembre%20-%20avion.png" alt="" aria-hidden="true" />
 <img class="special-event" id="specialEvent" src="extra/Julio.png" alt="" aria-hidden="true" />
 <div class="wrap">
   <header>
@@ -862,6 +884,7 @@ const snowLayer = document.getElementById('snowLayer');
 const butterflyLayer = document.getElementById('butterflyLayer');
 const santaSleigh = document.getElementById('santaSleigh');
 const sleighSparks = document.getElementById('sleighSparks');
+const septemberAirplane = document.getElementById('septemberAirplane');
 const specialEvent = document.getElementById('specialEvent');
 const alertImage = document.querySelector('.alert-image');
 const alertCaption = document.querySelector('.alert-caption');
@@ -921,6 +944,13 @@ let sleighTargetY = 0;
 let sleighDirection = 1;
 let sleighInitialized = false;
 let sleighSparkTimer = null;
+let airplaneAnimationFrame = null;
+let airplaneLastFrame = 0;
+let airplaneX = 0;
+let airplaneY = 0;
+let airplaneTargetY = 0;
+let airplaneDirection = 1;
+let airplaneInitialized = false;
 let specialEventTimer = null;
 let specialEventTimeout = null;
 let specialEventAudio = null;
@@ -1041,6 +1071,55 @@ function stopSleighSparks() {
   }
 }
 
+function chooseAirplaneHeight() {
+  const imageHeight = septemberAirplane.getBoundingClientRect().height || 180;
+  const margin = Math.min(imageHeight / 2 + 12, window.innerHeight * .1);
+  airplaneTargetY = margin + Math.random() * Math.max(1, window.innerHeight - margin * 2);
+}
+
+function animateSeptemberAirplane(timestamp) {
+  if (!septemberAirplane || !patriaMode || selectedPatriaEvent?.label !== '11 de septiembre') {
+    airplaneAnimationFrame = null;
+    return;
+  }
+  const elapsed = Math.min(48, timestamp - (airplaneLastFrame || timestamp));
+  airplaneLastFrame = timestamp;
+  const imageWidth = septemberAirplane.getBoundingClientRect().width || 120;
+  airplaneX += airplaneDirection * elapsed * .11;
+  if (airplaneX > window.innerWidth + imageWidth / 2) airplaneX = -imageWidth / 2;
+  if (airplaneX < -imageWidth / 2) airplaneX = window.innerWidth + imageWidth / 2;
+  airplaneY += (airplaneTargetY - airplaneY) * Math.min(1, elapsed / 2600);
+  if (Math.abs(airplaneTargetY - airplaneY) < 2) chooseAirplaneHeight();
+  septemberAirplane.style.left = `${airplaneX}px`;
+  septemberAirplane.style.top = `${airplaneY}px`;
+  septemberAirplane.style.transform = `translate(-50%, -50%) scaleX(${airplaneDirection})`;
+  airplaneAnimationFrame = requestAnimationFrame(animateSeptemberAirplane);
+}
+
+function startSeptemberAirplane() {
+  if (!septemberAirplane || !patriaMode || selectedPatriaEvent?.label !== '11 de septiembre') return;
+  const imageWidth = septemberAirplane.getBoundingClientRect().width || 120;
+  const imageHeight = septemberAirplane.getBoundingClientRect().height || 180;
+  if (!airplaneInitialized) {
+    airplaneX = -imageWidth / 2;
+    airplaneY = Math.max(imageHeight / 2, window.innerHeight * .3);
+    chooseAirplaneHeight();
+    airplaneInitialized = true;
+  }
+  septemberAirplane.style.left = `${airplaneX}px`;
+  septemberAirplane.style.top = `${airplaneY}px`;
+  septemberAirplane.style.transform = `translate(-50%, -50%) scaleX(${airplaneDirection})`;
+  cancelAnimationFrame(airplaneAnimationFrame);
+  airplaneLastFrame = 0;
+  airplaneAnimationFrame = requestAnimationFrame(animateSeptemberAirplane);
+}
+
+function stopSeptemberAirplane() {
+  cancelAnimationFrame(airplaneAnimationFrame);
+  airplaneAnimationFrame = null;
+  airplaneInitialized = false;
+}
+
 function chooseSantaSleighHeight() {
   const imageHeight = santaSleigh.getBoundingClientRect().height || 140;
   const margin = Math.min(imageHeight / 2 + 12, window.innerHeight * .1);
@@ -1122,6 +1201,7 @@ function getPatriaEvent(date) {
 function setPatriaMode(enabled, event = null) {
   patriaMode = enabled;
   document.body.classList.toggle('patria-mode', enabled);
+  document.body.classList.toggle('september-eleventh-mode', enabled && event?.label === '11 de septiembre');
   document.body.classList.toggle('september-twenty-first-mode', enabled && event?.label === '21 de septiembre');
   patriaEventToggles.forEach((button) => {
     button.setAttribute('aria-pressed', String(enabled && button.dataset.eventDate === (event ? event.label : undefined)));
@@ -1132,9 +1212,11 @@ function updatePatriaBackground(event) {
   if (!event) {
     document.body.classList.remove('has-patria-background');
     document.body.classList.remove('october-twelfth-mode');
+    document.body.classList.remove('september-eleventh-mode');
     document.body.classList.remove('september-twenty-first-mode');
     document.body.style.background = '';
     stopSeptemberButterflies();
+    stopSeptemberAirplane();
     return;
   }
   const backgroundMap = {
@@ -1148,6 +1230,7 @@ function updatePatriaBackground(event) {
   const backgroundUrl = backgroundMap[event.label] || 'fechas_patrias/fondo.webp';
   document.body.classList.add('has-patria-background');
   document.body.classList.toggle('october-twelfth-mode', event.label === '12 de octubre');
+  document.body.classList.toggle('september-eleventh-mode', event.label === '11 de septiembre');
   document.body.classList.toggle('september-twenty-first-mode', event.label === '21 de septiembre');
   if (backgroundUrl) {
     const overlay = event.label === '8 de marzo'
@@ -1161,6 +1244,11 @@ function updatePatriaBackground(event) {
     startSeptemberButterflies();
   } else {
     stopSeptemberButterflies();
+  }
+  if (event.label === '11 de septiembre') {
+    startSeptemberAirplane();
+  } else {
+    stopSeptemberAirplane();
   }
 }
 
