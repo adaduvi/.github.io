@@ -1055,6 +1055,12 @@ let specialEventRequest = 0;
 let anyBusy = false;
 let simulationMessageTimer = null;
 let simulationEnabled = false;
+let simulationMessageIndex = 0;
+const simulationMessages = [
+  'Armando Simulación',
+  'Espere a ser llamado',
+  'Tecnicos organizando Simulacro'
+];
 
 function isDecember(date) {
   return date.getMonth() === 11 && date.getDate() >= 1 && date.getDate() <= 31;
@@ -1768,10 +1774,9 @@ simulationToggle.addEventListener('click', () => {
   simulationToggle.textContent = simulationEnabled ? 'Armando Simulación' : '';
   if (simulationEnabled) {
     simulationMessageTimer = setInterval(() => {
-      simulationToggle.textContent = simulationToggle.textContent === 'Armando Simulación'
-        ? 'Espere a ser llamado'
-        : 'Armando Simulación';
-    }, 5000);
+      simulationMessageIndex = (simulationMessageIndex + 1) % simulationMessages.length;
+      simulationToggle.textContent = simulationMessages[simulationMessageIndex];
+    }, 3000);
   }
 });
 
