@@ -19,7 +19,7 @@
     --ok-dim:rgba(45,212,191,.14);
     --busy:#fb7185;
     --busy-dim:rgba(251,113,133,.16);
-    --accent:#5b8def;
+    --accent:#3858974b;
 
     --libre-1:#0d9488;
     --libre-2:#10b981;
@@ -360,8 +360,17 @@
       color-mix(in srgb, var(--grad-1, var(--libre-1)) 72%, transparent) 0%,
       color-mix(in srgb, var(--grad-2, var(--libre-2)) 72%, transparent) 100%);
   }
+  body:not(.december-mode):not(.patria-mode):not(.women-day-mode) .card.free-card{
+    background:linear-gradient(150deg,
+      color-mix(in srgb, var(--grad-1, var(--libre-1)) 60%, transparent) 0%,
+      color-mix(in srgb, var(--grad-2, var(--libre-2)) 60%, transparent) 100%);
+  }
+  body.december-mode .card.free-card,
+  body.women-day-mode .card.free-card{
+    background:linear-gradient(150deg, rgba(13,148,136,.6) 0%, rgba(16,185,129,.6) 100%);
+  }
   body.has-patria-background .card.free-card{
-    background:linear-gradient(150deg, rgba(13,148,136,.5) 0%, rgba(16,185,129,.5) 100%);
+    background:linear-gradient(150deg, rgba(13,148,136,.6) 0%, rgba(16,185,129,.6) 100%);
   }
   .card-snow-cap{
     position:absolute;
@@ -620,8 +629,8 @@
     overflow:hidden;
     border:1px solid rgba(255,255,255,.12);
     border-radius:var(--radius);
-    background:linear-gradient(145deg,var(--surface-2),var(--surface));
-    color:var(--ink);
+    background:var(--accent);
+    color:#fff;
     cursor:pointer;
     box-shadow:0 16px 40px rgba(0,0,0,.35);
     font-family:var(--font-display);
@@ -630,7 +639,7 @@
     line-height:1.05;
     text-align:center;
   }
-  .simulation-toggle:hover{background:var(--accent);}
+  .simulation-toggle:hover{background:#263e6d85;}
   .simulation-toggle:focus-visible{
     outline:2px solid var(--accent);
     outline-offset:3px;
