@@ -649,54 +649,19 @@
   .alert-card > *{position:relative;z-index:1;}
   .alert-tag{
     font-family:var(--font-mono);font-size:13px;letter-spacing:.16em;text-transform:uppercase;
-    color:rgba(255,255,255,.8);
+    color:#000;
   }
   .alert-card strong{
     font-family:var(--font-display);font-size:152px;font-weight:700;color:#fff;letter-spacing:.2px;
     line-height:1.05;
-    -webkit-text-stroke:1.5px rgba(0,0,0,.55);
+    -webkit-text-stroke:6.5px rgb(0, 0, 0);
     paint-order:stroke fill;
-    animation:alertShadowBeat 3.2s ease-in-out infinite;
     display:block;width:100%;text-align:center;align-self:center;
   }
   .alert-wrapper.mode-active .alert-card strong{
     font-size:102px;
   }
-  @keyframes alertShadowBeat{
-    0%,18%,100%{
-      text-shadow:
-        -2px -2px 0 rgba(0,0,0,.45),
-         2px -2px 0 rgba(0,0,0,.45),
-        -2px  2px 0 rgba(0,0,0,.45),
-         2px  2px 0 rgba(0,0,0,.45),
-         0 0 24px rgba(0,0,0,1);
-    }
-    9%{
-      text-shadow:
-        -2px -2px 0 rgba(0,0,0,.45),
-         2px -2px 0 rgba(0,0,0,.45),
-        -2px  2px 0 rgba(0,0,0,.45),
-         2px  2px 0 rgba(0,0,0,.45),
-         0 0 56px rgba(0,0,0,1);
-    }
-    27%{
-      text-shadow:
-        -2px -2px 0 rgba(0,0,0,.45),
-         2px -2px 0 rgba(0,0,0,.45),
-        -2px  2px 0 rgba(0,0,0,.45),
-         2px  2px 0 rgba(0,0,0,.45),
-         0 0 56px rgba(0,0,0,1);
-    }
-    36%{
-      text-shadow:
-        -2px -2px 0 rgba(0,0,0,.45),
-         2px -2px 0 rgba(0,0,0,.45),
-        -2px  2px 0 rgba(0,0,0,.45),
-         2px  2px 0 rgba(0,0,0,.45),
-         0 0 24px rgba(0,0,0,1);
-    }
-  }
-  .alert-card span.sub{font-family:var(--font-body);font-size:22px;color:rgba(255,255,255,.92);font-weight:500;}
+  .alert-card span.sub{font-family:var(--font-body);font-size:22px;color:#000;font-weight:500;}
   .alert-image-frame{
     align-self:stretch;
     padding:10px;
@@ -832,7 +797,6 @@
     .led.pulse{animation:none;}
     .card{transition:none;}
     .name.beat{animation:none;}
-    .alert-card strong{animation:none;}
     .card-sheen::before{animation:none;display:none;}
     .developer-mode-indicator{animation:none;}
     .snowflake{animation:none;}
