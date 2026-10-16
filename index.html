@@ -300,29 +300,6 @@
     text-transform:uppercase;color:var(--muted);margin-top:3px;
   }
 
-  .sound-toggle{
-    width:34px;height:34px;
-    display:flex;align-items:center;justify-content:center;
-    margin-left:auto;margin-right:24px;
-    padding:0;
-    border:1px solid var(--line);
-    border-radius:10px;
-    background:rgba(255,255,255,.04);
-    color:var(--muted);
-    cursor:pointer;
-    appearance:none;
-  }
-  .sound-toggle:hover{background:rgba(255,255,255,.09);color:var(--ink);}
-  .sound-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
-  .sound-toggle[aria-pressed="true"]{color:var(--ok);border-color:rgba(45,212,191,.45);}
-  .sound-toggle.sound-error{color:#ff4d67;border-color:rgba(255,77,103,.65);}
-  .sound-toggle.playing svg{animation:soundIconBlink 1s ease-in-out infinite;}
-  @keyframes soundIconBlink{
-    0%,100%{opacity:1;}
-    50%{opacity:.22;}
-  }
-  .sound-toggle svg{width:17px;height:17px;}
-
   .clock{text-align:right;line-height:1.15;}
   .clock .time{
     font-family:var(--font-mono);font-weight:500;font-size:30px;color:var(--ink);
@@ -668,18 +645,6 @@
   }
   .alert-card::before{
     background:#ff0014;
-    animation:alertFadeRed 60s ease-in-out infinite;
-  }
-  .alert-card::after{
-    background:#ffdd00;
-    opacity:0;
-    animation:alertFadeAmber 60s ease-in-out infinite;
-  }
-  @keyframes alertFadeRed{
-    0%{opacity:1;} 50%{opacity:0;} 100%{opacity:1;}
-  }
-  @keyframes alertFadeAmber{
-    0%{opacity:0;} 50%{opacity:1;} 100%{opacity:0;}
   }
   .alert-card > *{position:relative;z-index:1;}
   .alert-tag{
@@ -866,8 +831,6 @@
   @media (prefers-reduced-motion: reduce){
     .led.pulse{animation:none;}
     .card{transition:none;}
-    .alert-card::before,
-    .alert-card::after{animation:none;}
     .name.beat{animation:none;}
     .alert-card strong{animation:none;}
     .card-sheen::before{animation:none;display:none;}
@@ -902,12 +865,6 @@
         <span>Panel de estado de salas - version 0.2.9</span>
       </div>
     </div>
-    <button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false" aria-label="Activar sonido" title="Activar sonido">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M5 10v4h3l4 3V7l-4 3H5Z" fill="currentColor"/>
-        <path d="M16 9.5a4 4 0 0 1 0 5M18.5 7a7.5 7.5 0 0 1 0 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-      </svg>
-    </button>
     <div class="clock">
       <div class="time" id="timeText"></div>
       <div class="date" id="dateText"></div>
@@ -944,7 +901,7 @@
     <button class="simulation-toggle" id="simulationToggle" type="button" aria-expanded="false" aria-label="Activar simulación" title="Activar simulación"></button>
     <div class="alert-card">
       <span class="alert-tag">Aviso</span>
-      <strong>Mantenga silencio</strong>
+      <strong id="alertMessage">Mantenga silencio</strong>
       <span class="sub">Simulación en curso</span>
     </div>
     <div class="alert-image-frame">
@@ -984,9 +941,9 @@ const ROOM_DEFINITIONS = ROOM_ORDER.map((name) => ({
 
 const grid = document.getElementById('grid');
 const alertWrapper = document.getElementById('alertWrapper');
+const alertMessage = document.getElementById('alertMessage');
 const simulationToggle = document.getElementById('simulationToggle');
 const modeToggle = document.querySelector('.mode-toggle');
-const soundToggle = document.getElementById('soundToggle');
 const developerModeIndicator = document.getElementById('developerModeIndicator');
 const decemberToggle = document.getElementById('decemberToggle');
 const julioTestButton = document.getElementById('julioTestButton');
@@ -1003,10 +960,6 @@ const alertImage = document.querySelector('.alert-image');
 const alertCaption = document.querySelector('.alert-caption');
 const timeText = document.getElementById('timeText');
 const dateText = document.getElementById('dateText');
-const silenceAudio = new Audio(new URL('./sonido_hospital.mp3', document.baseURI).href);
-silenceAudio.preload = 'auto';
-silenceAudio.loop = true;
-
 const SPECIAL_EVENT_NAMES = ['Julio', 'Barby', 'AgustinaR'];
 const SPECIAL_EVENT_PROBABILITY = 0.30;
 const SPECIAL_EVENT_INTERVAL = 10 * 60 * 1000;
@@ -1015,6 +968,8 @@ const SPECIAL_EVENT_DURATION = 4000;
 const MODE_IMAGE_DIR = 'extra/';
 const MODE_MANIFEST_PATH = `${MODE_IMAGE_DIR}manifest.json`;
 const MODE_IMAGE_PAUSE = 10000;
+const ALERT_MESSAGE_INTERVAL = 7000;
+const ALERT_MESSAGES = ['Mantenga silencio', 'Prohibido ingresar'];
 const WOMEN_DAY_DIR = 'fechas_patrias/8%20de%20marzo/';
 const WOMEN_DAY_MANIFEST_PATH = `${WOMEN_DAY_DIR}manifest.json`;
 const PATRIA_EVENTS = [
@@ -1047,8 +1002,6 @@ let decemberMode = false;
 let patriaMode = false;
 let womenDayMode = false;
 let selectedPatriaEvent = null;
-let soundEnabled = false;
-let alertWasActive = false;
 let sleighAnimationFrame = null;
 let sleighLastFrame = 0;
 let sleighX = 0;
@@ -1069,6 +1022,9 @@ let specialEventTimeout = null;
 let specialEventAudio = null;
 let specialEventRequest = 0;
 let anyBusy = false;
+let alertMessageTimer = null;
+let alertMessageIndex = 0;
+let alertMessageActive = false;
 let simulationMessageTimer = null;
 let simulationEnabled = false;
 let simulationMessageIndex = 0;
@@ -1401,37 +1357,53 @@ function captionTextToHtml(title, text) {
   return `${titleHtml}<div class="alert-caption-body"><div class="alert-caption-scroll">${bodyHtml}</div></div>`;
 }
 
-function prepareCaptionScroll() {
-  if (!alertCaption) return 0;
+function prepareCaptionScroll(onScrollFinished) {
+  const notifyFinished = () => {
+    if (typeof onScrollFinished === 'function') onScrollFinished();
+  };
+  if (!alertCaption) {
+    notifyFinished();
+    return;
+  }
   const body = alertCaption.querySelector('.alert-caption-body');
   const scrollContent = alertCaption.querySelector('.alert-caption-scroll');
-  if (!body || !scrollContent) return 0;
+  if (!body || !scrollContent) {
+    notifyFinished();
+    return;
+  }
 
   const distance = Math.max(0, scrollContent.scrollHeight - body.clientHeight);
   const duration = Math.max(18, distance * 0.12);
   scrollContent.style.setProperty('--caption-scroll-distance', `${-distance}px`);
   scrollContent.style.setProperty('--caption-scroll-duration', `${duration}s`);
-  
-  // Forzar reinicio de la animación
+
   scrollContent.style.animation = 'none';
-  scrollContent.offsetHeight; // Forzar reflow
+  scrollContent.offsetHeight;
   scrollContent.style.animation = `captionScroll ${duration}s ease-in-out 1 forwards`;
-  
-  scrollContent.style.animationPlayState = distance > 0 ? 'running' : 'paused';
-  return distance > 0 ? duration * 1000 : 0;
+
+  if (distance > 0) {
+    const handleScrollEnd = (event) => {
+      if (event.target !== scrollContent || event.animationName !== 'captionScroll') return;
+      scrollContent.removeEventListener('animationend', handleScrollEnd);
+      notifyFinished();
+    };
+    scrollContent.addEventListener('animationend', handleScrollEnd);
+  } else {
+    notifyFinished();
+  }
 }
 
-function scheduleCaptionScroll(onReady) {
-  const notifyReady = () => {
-    const scrollDuration = prepareCaptionScroll();
-    if (onReady) onReady(scrollDuration);
+function scheduleCaptionScroll(onScrollFinished) {
+  const prepareAfterLayout = () => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      prepareCaptionScroll(onScrollFinished);
+    }));
   };
-  requestAnimationFrame(() => {
-    notifyReady();
-    requestAnimationFrame(notifyReady);
-  });
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(notifyReady);
-  setTimeout(notifyReady, 800);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(prepareAfterLayout);
+  } else {
+    prepareAfterLayout();
+  }
 }
 
 function shuffleAssets(assets) {
@@ -1555,7 +1527,7 @@ async function setWomenDayAsset(imageFileName) {
       alertImage.src = imageUrl;
       if (alertCaption) {
         alertCaption.innerHTML = captionTextToHtml(baseName, caption);
-        scheduleCaptionScroll((scrollDuration) => scheduleWomenDayImageRotation(scrollDuration));
+        scheduleCaptionScroll(scheduleWomenDayImageRotation);
       }
       alertImage.style.opacity = '1';
     }, 600);
@@ -1570,10 +1542,10 @@ function rotateWomenDayImage() {
   setWomenDayAsset(womenDayAssets[womenDayImageIndex]);
 }
 
-function scheduleWomenDayImageRotation(scrollDuration = 0) {
+function scheduleWomenDayImageRotation() {
   clearTimeout(womenDayImageTimer);
   if (!patriaMode || selectedPatriaEvent?.label !== '8 de marzo' || womenDayAssets.length <= 1) return;
-  womenDayImageTimer = setTimeout(rotateWomenDayImage, scrollDuration + MODE_IMAGE_PAUSE);
+  womenDayImageTimer = setTimeout(rotateWomenDayImage, MODE_IMAGE_PAUSE);
 }
 
 function startWomenDayImageRotation() {
@@ -1596,9 +1568,7 @@ async function setAlertAsset(imageFileName) {
       alertImage.src = imageUrl;
       if (alertCaption) {
         alertCaption.innerHTML = captionTextToHtml(title, caption);
-        scheduleCaptionScroll((scrollDuration) => {
-          scheduleModeImageRotation(scrollDuration);
-        });
+        scheduleCaptionScroll(scheduleModeImageRotation);
       }
       alertImage.style.opacity = '1';
     }, 600);
@@ -1615,10 +1585,10 @@ function rotateModeImage() {
   setAlertAsset(modeAssets[modeImageIndex]);
 }
 
-function scheduleModeImageRotation(scrollDuration) {
+function scheduleModeImageRotation() {
   clearTimeout(modeImageTimer);
   if (!modeActive || modeAssets.length <= 1) return;
-  modeImageTimer = setTimeout(rotateModeImage, scrollDuration + MODE_IMAGE_PAUSE);
+  modeImageTimer = setTimeout(rotateModeImage, MODE_IMAGE_PAUSE);
 }
 
 function startModeImageRotation() {
@@ -1637,38 +1607,6 @@ function stopModeImageRotation() {
     if (alertCaption) alertCaption.innerHTML = '';
     alertImage.style.opacity = '1';
   }, 600);
-}
-
-function updateSoundPlayback(alertActive) {
-  const shouldPlay = soundEnabled && alertActive;
-  if (shouldPlay) {
-    updateSoundIndicator(true, 'waiting');
-    silenceAudio.play().catch((error) => {
-      soundEnabled = false;
-      soundToggle.setAttribute('aria-pressed', 'false');
-      soundToggle.setAttribute('aria-label', 'Activar sonido');
-      soundToggle.setAttribute('title', `Error de audio: ${error.name}`);
-      updateSoundIndicator(true, 'error');
-    });
-    return;
-  }
-  silenceAudio.pause();
-  silenceAudio.currentTime = 0;
-  updateSoundIndicator(false, 'idle');
-}
-
-function setSoundEnabled(enabled) {
-  soundEnabled = enabled;
-  soundToggle.setAttribute('aria-pressed', String(enabled));
-  soundToggle.setAttribute('aria-label', enabled ? 'Desactivar sonido' : 'Activar sonido');
-  soundToggle.setAttribute('title', enabled ? 'Desactivar sonido' : 'Activar sonido');
-}
-
-function updateSoundIndicator(alertActive, status) {
-  const isPlaying = status === 'playing';
-  const isError = alertActive && status !== 'playing';
-  soundToggle.classList.toggle('playing', isPlaying);
-  soundToggle.classList.toggle('sound-error', isError);
 }
 
 function preloadSpecialEvents() {
@@ -1733,27 +1671,6 @@ function startSpecialEventSchedule() {
   clearInterval(specialEventTimer);
   specialEventTimer = setInterval(trySpecialEvent, SPECIAL_EVENT_INTERVAL);
 }
-
-silenceAudio.addEventListener('playing', () => {
-  updateSoundIndicator(true, 'playing');
-});
-
-['pause', 'ended', 'error'].forEach((eventName) => {
-  silenceAudio.addEventListener(eventName, () => {
-    updateSoundIndicator(alertWrapper.style.display !== 'none', eventName === 'error' ? 'error' : 'idle');
-  });
-});
-
-silenceAudio.addEventListener('error', () => {
-  const mediaError = silenceAudio.error;
-  const errorCode = mediaError ? ` (${mediaError.code})` : '';
-  soundToggle.setAttribute('title', `No se pudo cargar sonido_hospital.mp3${errorCode}`);
-});
-
-soundToggle.addEventListener('click', () => {
-  setSoundEnabled(!soundEnabled);
-  updateSoundPlayback(alertWrapper.style.display !== 'none');
-});
 
 modeToggle.addEventListener('click', async () => {
   modeActive = !modeActive;
@@ -1979,16 +1896,29 @@ function render() {
 
   alertWrapper.classList.toggle('alert-active', anyBusy);
   alertWrapper.style.display = anyBusy || modeActive ? 'flex' : 'none';
+  updateAlertMessage(anyBusy);
   if (anyBusy) hideSpecialEvent();
-  if (anyBusy && !alertWasActive) setSoundEnabled(true);
-  alertWasActive = anyBusy;
-  updateSoundPlayback(anyBusy);
 
   const nextFocusedCard = [...grid.querySelectorAll('.card')].find((card) => card.dataset.roomName === focusedRoomName);
   const initialCard = nextFocusedCard || grid.querySelector('.card');
   if (initialCard) {
     initialCard.focus();
   }
+}
+
+function updateAlertMessage(active) {
+  if (active === alertMessageActive) return;
+  alertMessageActive = active;
+  clearInterval(alertMessageTimer);
+  alertMessageTimer = null;
+  alertMessageIndex = 0;
+  alertMessage.textContent = ALERT_MESSAGES[alertMessageIndex];
+  if (!active) return;
+
+  alertMessageTimer = setInterval(() => {
+    alertMessageIndex = (alertMessageIndex + 1) % ALERT_MESSAGES.length;
+    alertMessage.textContent = ALERT_MESSAGES[alertMessageIndex];
+  }, ALERT_MESSAGE_INTERVAL);
 }
 
 function updateDateTime() {
