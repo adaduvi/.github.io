@@ -524,10 +524,82 @@
 
   .foot{margin-top:auto;position:relative;z-index:1;}
 
+  .bottom-banners{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    align-items:stretch;
+    gap:20px;
+    margin-top:30px;
+  }
+  .attendance-banner{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    width:100%;
+    min-width:0;
+    padding:16px;
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:var(--radius);
+    background:linear-gradient(145deg,var(--surface-2),var(--surface));
+    box-shadow:0 12px 30px rgba(0,0,0,.25);
+    color:var(--ink);
+    cursor:pointer;
+    font-family:var(--font-display);
+    font-size:clamp(22px,3vw,36px);
+    font-weight:600;
+    text-align:center;
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .attendance-banner-label{display:block;}
+  .attendance-banner-status{
+    display:block;
+    max-width:100%;
+    font:500 14px/1.35 var(--font-body);
+    overflow-wrap:anywhere;
+  }
+  .attendance-banner-countdown{
+    display:block;
+    color:#9fc1ff;
+    font:600 20px/1 var(--font-mono);
+    font-variant-numeric:tabular-nums;
+  }
+  .attendance-qr-canvas{
+    display:block;
+    width:min(100%,180px);
+    height:auto;
+    padding:8px;
+    border-radius:10px;
+    background:#fff;
+  }
+  .attendance-qr-canvas[hidden],
+  .attendance-banner-status[hidden],
+  .attendance-banner-countdown[hidden]{display:none;}
+  .attendance-banner.has-error .attendance-banner-status{color:#fda4af;}
+  .attendance-banner:hover{
+    transform:translateY(-2px);
+    box-shadow:0 16px 36px rgba(0,0,0,.35);
+  }
+  .attendance-banner:focus-visible{
+    outline:2px solid var(--ink);
+    outline-offset:3px;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .attendance-banner{transition:none;}
+  }
+  .bottom-banner-content{
+    grid-column:2 / -1;
+    min-width:0;
+  }
+  .bottom-banners.alert-active .attendance-banner{display:none;}
+  .bottom-banners.alert-active .bottom-banner-content{grid-column:1 / -1;}
+  .bottom-banners.alert-active .requirements-banner{display:none;}
+
   /* ---------- Alert banner ---------- */
   .alert-wrapper{
     display:flex;align-items:stretch;gap:22px;
-    margin:30px 0 4px;
+    margin:0 0 4px;
     width:100%;
   }
   .alert-wrapper.mode-active{
@@ -558,9 +630,6 @@
     box-shadow:0 12px 30px rgba(0,0,0,.25);
     overflow:hidden;
     gap:28px;
-  }
-  .alert-wrapper.alert-active + .requirements-banner{
-    display:none;
   }
   .requirements-title{
     flex:0 0 auto;
@@ -780,11 +849,22 @@
     100%{transform:translateX(100%);}
   }
 
-  @media (max-width:1400px){ .grid{grid-template-columns:repeat(3,1fr);} }
-  @media (max-width:1000px){ .grid{grid-template-columns:repeat(2,1fr);} .name{font-size:26px;} }
+  @media (max-width:1400px){
+    .grid{grid-template-columns:repeat(3,1fr);}
+    .bottom-banners{grid-template-columns:repeat(3,minmax(0,1fr));}
+  }
+  @media (max-width:1000px){
+    .grid{grid-template-columns:repeat(2,1fr);}
+    .bottom-banners{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .bottom-banner-content{grid-column:2 / -1;}
+    .name{font-size:26px;}
+  }
   @media (max-width:700px){
     .wrap{padding:24px 20px;}
     .grid{grid-template-columns:1fr;}
+    .bottom-banners{grid-template-columns:1fr;}
+    .bottom-banner-content{grid-column:1 / -1;}
+    .attendance-banner{min-height:100px;}
     header{flex-direction:column;align-items:flex-start;gap:14px;}
     .clock{text-align:left;}
     .alert-wrapper{flex-direction:column;}
@@ -861,29 +941,40 @@
     </div>
   </section>
 
-  <div class="alert-wrapper mode-active" id="alertWrapper">
-    <button class="simulation-toggle" id="simulationToggle" type="button" aria-expanded="false" aria-label="Activar simulación" title="Activar simulación"></button>
-    <div class="alert-card">
-      <span class="alert-tag">Aviso</span>
-      <strong id="alertMessage">Mantenga silencio</strong>
-      <span class="sub">Simulación en curso</span>
-    </div>
-    <div class="alert-image-frame">
-      <img class="alert-image" src="enfermera.png" alt="Enfermera" />
-      <div class="alert-caption" aria-live="polite"></div>
-    </div>
-  </div>
-  <section class="requirements-banner" aria-label="Importante">
-    <strong class="requirements-title">Importante:</strong>
-    <div class="requirements-scroll">
-      <div class="requirements-track">
-        <span class="requirements-copy">-Obligatorio el ingreso con ambo -Identificador con nombre legible -Prohibido grabar video o tomar fotografias -Iniciada la simulacion, no se podra ingresar</span>
-        <span class="requirements-copy" aria-hidden="true">-Obligatorio el ingreso con ambo -Identificador con nombre legible -Prohibido grabar video o tomar fotografias -Iniciada la simulacion, no se podra ingresar</span>
+  <section class="bottom-banners" id="bottomBanners">
+    <button class="attendance-banner" id="attendanceBanner" type="button" aria-label="Mostrar QR de presentismo" aria-pressed="false">
+      <span class="attendance-banner-label" id="attendanceBannerLabel">Presentismo</span>
+      <span class="attendance-banner-status" id="attendanceBannerStatus" role="status" aria-live="polite" hidden></span>
+      <canvas class="attendance-qr-canvas" id="attendanceQrCanvas" hidden></canvas>
+      <span class="attendance-banner-countdown" id="attendanceBannerCountdown" aria-live="off" hidden></span>
+    </button>
+    <div class="bottom-banner-content">
+      <div class="alert-wrapper mode-active" id="alertWrapper">
+        <button class="simulation-toggle" id="simulationToggle" type="button" aria-expanded="false" aria-label="Activar simulación" title="Activar simulación"></button>
+        <div class="alert-card">
+          <span class="alert-tag">Aviso</span>
+          <strong id="alertMessage">Mantenga silencio</strong>
+          <span class="sub">Simulación en curso</span>
+        </div>
+        <div class="alert-image-frame">
+          <img class="alert-image" src="enfermera.png" alt="Enfermera" />
+          <div class="alert-caption" aria-live="polite"></div>
+        </div>
       </div>
+      <section class="requirements-banner" aria-label="Importante">
+        <strong class="requirements-title">Importante:</strong>
+        <div class="requirements-scroll">
+          <div class="requirements-track">
+            <span class="requirements-copy">-Obligatorio el ingreso con ambo -Identificador con nombre legible -Prohibido grabar video o tomar fotografias -Obedecer las leyes de la termodinámica -Iniciada la simulacion, no se podra ingresar</span>
+            <span class="requirements-copy" aria-hidden="true">-Obligatorio el ingreso con ambo -Identificador con nombre legible -Prohibido grabar video o tomar fotografias -Obedecer las leyes de la termodinámica -Iniciada la simulacion, no se podra ingresar</span>
+          </div>
+        </div>
+      </section>
     </div>
   </section>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
 <script>
 const BUSY_STATES = new Set(['ocupada', 'debrief']);
 const ROOM_ORDER = [
@@ -904,6 +995,12 @@ const ROOM_DEFINITIONS = ROOM_ORDER.map((name) => ({
 }));
 
 const grid = document.getElementById('grid');
+const bottomBanners = document.getElementById('bottomBanners');
+const attendanceBanner = document.getElementById('attendanceBanner');
+const attendanceBannerLabel = document.getElementById('attendanceBannerLabel');
+const attendanceBannerStatus = document.getElementById('attendanceBannerStatus');
+const attendanceQrCanvas = document.getElementById('attendanceQrCanvas');
+const attendanceBannerCountdown = document.getElementById('attendanceBannerCountdown');
 const alertWrapper = document.getElementById('alertWrapper');
 const alertMessage = document.getElementById('alertMessage');
 const simulationToggle = document.getElementById('simulationToggle');
@@ -925,7 +1022,7 @@ const alertCaption = document.querySelector('.alert-caption');
 const timeText = document.getElementById('timeText');
 const dateText = document.getElementById('dateText');
 const SPECIAL_EVENT_NAMES = ['Julio', 'Barby', 'AgustinaR'];
-const SPECIAL_EVENT_PROBABILITY = 0.30;
+const SPECIAL_EVENT_PROBABILITY = 0.05;
 const SPECIAL_EVENT_INTERVAL = 10 * 60 * 1000;
 const SPECIAL_EVENT_DURATION = 4000;
 
@@ -934,6 +1031,11 @@ const MODE_MANIFEST_PATH = `${MODE_IMAGE_DIR}manifest.json`;
 const MODE_IMAGE_PAUSE = 10000;
 const ALERT_MESSAGE_INTERVAL = 7000;
 const ALERT_MESSAGES = ['Mantenga silencio', 'Prohibido ingresar'];
+const ATTENDANCE_SHEET_PATH = 'presentismo/qr.ods';
+const ODS_TABLE_NS = 'urn:oasis:names:tc:opendocument:xmlns:table:1.0';
+const ODS_OFFICE_NS = 'urn:oasis:names:tc:opendocument:xmlns:office:1.0';
+const ODS_TEXT_NS = 'urn:oasis:names:tc:opendocument:xmlns:text:1.0';
+const ATTENDANCE_QR_DURATION = 2 * 60;
 const WOMEN_DAY_DIR = 'fechas_patrias/8%20de%20marzo/';
 const WOMEN_DAY_MANIFEST_PATH = `${WOMEN_DAY_DIR}manifest.json`;
 const PATRIA_EVENTS = [
@@ -989,6 +1091,8 @@ let anyBusy = false;
 let alertMessageTimer = null;
 let alertMessageIndex = 0;
 let alertMessageActive = false;
+let attendanceCountdownTimer = null;
+let attendanceLoading = false;
 let simulationMessageTimer = null;
 let simulationEnabled = false;
 let simulationMessageIndex = 0;
@@ -996,7 +1100,7 @@ const simulationMessages = [
   'Armando Simulación',
   'Espere a ser llamado',
   'Mantener silencio',
-  'Siga las instrucciones',
+  
 
 ];
 
@@ -1636,6 +1740,235 @@ function startSpecialEventSchedule() {
   specialEventTimer = setInterval(trySpecialEvent, SPECIAL_EVENT_INTERVAL);
 }
 
+function extractOdsContentXml(archive) {
+  const view = new DataView(archive);
+  let endRecordOffset = -1;
+  const minimumOffset = Math.max(0, view.byteLength - 0xffff - 22);
+  for (let offset = view.byteLength - 22; offset >= minimumOffset; offset -= 1) {
+    if (view.getUint32(offset, true) === 0x06054b50) {
+      endRecordOffset = offset;
+      break;
+    }
+  }
+  if (endRecordOffset < 0) throw new Error('El archivo ODS no tiene una estructura ZIP válida.');
+
+  const entryCount = view.getUint16(endRecordOffset + 10, true);
+  let entryOffset = view.getUint32(endRecordOffset + 16, true);
+  const decoder = new TextDecoder();
+  for (let index = 0; index < entryCount; index += 1) {
+    if (view.getUint32(entryOffset, true) !== 0x02014b50) {
+      throw new Error('No se pudo leer el índice del archivo ODS.');
+    }
+    const compression = view.getUint16(entryOffset + 10, true);
+    const compressedSize = view.getUint32(entryOffset + 20, true);
+    const fileNameLength = view.getUint16(entryOffset + 28, true);
+    const extraLength = view.getUint16(entryOffset + 30, true);
+    const commentLength = view.getUint16(entryOffset + 32, true);
+    const localHeaderOffset = view.getUint32(entryOffset + 42, true);
+    const fileName = decoder.decode(new Uint8Array(archive, entryOffset + 46, fileNameLength));
+
+    if (fileName === 'content.xml') {
+      if (view.getUint32(localHeaderOffset, true) !== 0x04034b50) {
+        throw new Error('No se pudo leer el contenido de la planilla ODS.');
+      }
+      const localNameLength = view.getUint16(localHeaderOffset + 26, true);
+      const localExtraLength = view.getUint16(localHeaderOffset + 28, true);
+      const dataOffset = localHeaderOffset + 30 + localNameLength + localExtraLength;
+      const compressedData = archive.slice(dataOffset, dataOffset + compressedSize);
+      if (compression === 0) return decoder.decode(compressedData);
+      if (compression !== 8 || typeof DecompressionStream === 'undefined') {
+        throw new Error('El navegador no puede descomprimir esta planilla ODS.');
+      }
+      return new Response(
+        new Blob([compressedData]).stream().pipeThrough(new DecompressionStream('deflate-raw'))
+      ).text();
+    }
+
+    entryOffset += 46 + fileNameLength + extraLength + commentLength;
+  }
+  throw new Error('No se encontró la hoja de cálculo dentro del archivo ODS.');
+}
+
+async function loadAttendanceRecords() {
+  const response = await fetch(`${ATTENDANCE_SHEET_PATH}?t=${Date.now()}`, { cache: 'no-store' });
+  if (!response.ok) throw new Error(`No se pudo cargar la planilla de presentismo (HTTP ${response.status}).`);
+  const archive = await response.arrayBuffer();
+  const contentXml = await extractOdsContentXml(archive);
+  const documentXml = new DOMParser().parseFromString(await contentXml, 'application/xml');
+  if (documentXml.querySelector('parsererror')) throw new Error('La hoja de cálculo ODS contiene XML inválido.');
+
+  const rows = [...documentXml.getElementsByTagNameNS(ODS_TABLE_NS, 'table-row')];
+  const cellsForRow = (row) => [...row.children].filter((cell) =>
+    cell.namespaceURI === ODS_TABLE_NS &&
+    (cell.localName === 'table-cell' || cell.localName === 'covered-table-cell')
+  );
+  const valueForCell = (cell) => {
+    if (!cell) return '';
+    if (cell.getAttributeNS(ODS_OFFICE_NS, 'value-type') === 'float') {
+      return cell.getAttributeNS(ODS_OFFICE_NS, 'value');
+    }
+    return [...cell.getElementsByTagNameNS(ODS_TEXT_NS, 'p')].map((paragraph) => paragraph.textContent).join(' ').trim();
+  };
+  const headerCells = rows.length ? cellsForRow(rows[0]).map((cell) => valueForCell(cell).toLocaleLowerCase('es-AR')) : [];
+  const columnIndexes = {
+    day: headerCells.indexOf('dia'),
+    hour: headerCells.indexOf('horario'),
+    subject: headerCells.indexOf('materia'),
+    url: headerCells.indexOf('url')
+  };
+  if (Object.values(columnIndexes).some((columnIndex) => columnIndex < 0)) {
+    throw new Error('La planilla debe incluir las columnas Dia, Horario, Materia y URL.');
+  }
+
+  return rows.slice(1).map((row) => {
+    const cells = cellsForRow(row);
+    return {
+      day: valueForCell(cells[columnIndexes.day]),
+      hour: Number(valueForCell(cells[columnIndexes.hour])),
+      subject: valueForCell(cells[columnIndexes.subject]),
+      url: valueForCell(cells[columnIndexes.url])
+    };
+  }).filter((record) => record.day && record.subject && record.url && Number.isInteger(record.hour));
+}
+
+function normalizedWeekday(day) {
+  return day.toLocaleLowerCase('es-AR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function normalizeAttendanceUrl(value) {
+  const trimmedValue = value.trim();
+  let url;
+  try {
+    url = new URL(trimmedValue);
+  } catch {
+    url = new URL(`https://${trimmedValue}`);
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error('La URL de presentismo debe comenzar con http:// o https://.');
+  }
+  return url.href;
+}
+
+function drawAttendanceQr(value) {
+  if (typeof window.qrcode !== 'function') {
+    throw new Error('No se pudo cargar el generador de códigos QR. Compruebe la conexión a Internet y vuelva a intentarlo.');
+  }
+  const qr = window.qrcode(0, 'M');
+  qr.addData(value);
+  qr.make();
+  const moduleCount = qr.getModuleCount();
+  const quietZone = 4;
+  const moduleSize = 8;
+  const canvasSize = (moduleCount + quietZone * 2) * moduleSize;
+  const context = attendanceQrCanvas.getContext('2d');
+  if (!context) throw new Error('No se pudo inicializar el lienzo del código QR.');
+
+  attendanceQrCanvas.width = canvasSize;
+  attendanceQrCanvas.height = canvasSize;
+  attendanceQrCanvas.setAttribute('aria-label', `Código QR para ${value}`);
+  attendanceQrCanvas.hidden = false;
+  context.fillStyle = '#fff';
+  context.fillRect(0, 0, canvasSize, canvasSize);
+  context.fillStyle = '#000';
+  for (let row = 0; row < moduleCount; row += 1) {
+    for (let column = 0; column < moduleCount; column += 1) {
+      if (qr.isDark(row, column)) {
+        context.fillRect(
+          (column + quietZone) * moduleSize,
+          (row + quietZone) * moduleSize,
+          moduleSize,
+          moduleSize
+        );
+      }
+    }
+  }
+}
+
+async function showAttendance() {
+  if (attendanceLoading || attendanceCountdownTimer !== null) return;
+  attendanceLoading = true;
+  attendanceBanner.disabled = true;
+  attendanceBanner.classList.remove('has-error');
+  attendanceBannerLabel.textContent = 'Cargando…';
+  attendanceBannerStatus.hidden = true;
+  attendanceQrCanvas.hidden = true;
+  attendanceBannerCountdown.hidden = true;
+
+  try {
+    const now = new Date();
+    const weekday = normalizedWeekday(new Intl.DateTimeFormat('es-AR', { weekday: 'long' }).format(now));
+    const hour = now.getHours();
+    if (hour < 8 || hour > 21) {
+      throw new Error('El presentismo está disponible entre las 8:00 y las 21:59.');
+    }
+    const records = await loadAttendanceRecords();
+    const record = records.find((item) =>
+      normalizedWeekday(item.day) === weekday && item.hour === hour
+    );
+    if (!record) throw new Error('No hay una materia registrada para el día y horario actuales.');
+
+    const url = normalizeAttendanceUrl(record.url);
+    drawAttendanceQr(url);
+    attendanceBannerLabel.textContent = record.subject;
+    attendanceBanner.setAttribute('aria-label', `QR de ${record.subject} visible durante dos minutos`);
+    attendanceBanner.setAttribute('aria-pressed', 'true');
+    attendanceBannerStatus.textContent = `${now.toLocaleDateString('es-AR', { weekday: 'long' })} · ${String(hour).padStart(2, '0')}:00 a ${String(hour + 1).padStart(2, '0')}:00`;
+    attendanceBannerStatus.hidden = false;
+    startAttendanceCountdown();
+  } catch (error) {
+    attendanceBannerLabel.textContent = 'Presentismo';
+    attendanceBannerStatus.textContent = error.message;
+    attendanceBannerStatus.hidden = false;
+    attendanceBanner.classList.add('has-error');
+    attendanceBanner.setAttribute('aria-label', 'No se pudo mostrar el QR. Volver a intentar');
+    console.error('No se pudo mostrar el QR de presentismo:', error);
+  } finally {
+    attendanceLoading = false;
+    attendanceBanner.disabled = false;
+  }
+}
+
+function updateAttendanceCountdown(secondsRemaining) {
+  const minutes = Math.floor(secondsRemaining / 60);
+  const seconds = secondsRemaining % 60;
+  attendanceBannerCountdown.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  attendanceBannerCountdown.hidden = false;
+}
+
+function startAttendanceCountdown() {
+  let secondsRemaining = ATTENDANCE_QR_DURATION;
+  updateAttendanceCountdown(secondsRemaining);
+  attendanceCountdownTimer = setInterval(() => {
+    secondsRemaining -= 1;
+    if (secondsRemaining <= 0) {
+      resetAttendanceBanner();
+      return;
+    }
+    updateAttendanceCountdown(secondsRemaining);
+  }, 1000);
+}
+
+function resetAttendanceBanner() {
+  clearInterval(attendanceCountdownTimer);
+  attendanceCountdownTimer = null;
+  attendanceBannerLabel.textContent = 'Presentismo';
+  attendanceBanner.setAttribute('aria-label', 'Mostrar QR de presentismo');
+  attendanceBanner.setAttribute('aria-pressed', 'false');
+  attendanceBannerStatus.textContent = '';
+  attendanceBannerStatus.hidden = true;
+  attendanceBannerCountdown.textContent = '';
+  attendanceBannerCountdown.hidden = true;
+  attendanceQrCanvas.hidden = true;
+  attendanceQrCanvas.width = 0;
+  attendanceQrCanvas.height = 0;
+  attendanceQrCanvas.removeAttribute('aria-label');
+  attendanceBanner.classList.remove('has-error');
+}
+
+attendanceBanner.addEventListener('click', () => {
+  void showAttendance();
+});
+
 modeToggle.addEventListener('click', async () => {
   modeActive = !modeActive;
   alertWrapper.classList.toggle('mode-active', modeActive);
@@ -1858,6 +2191,7 @@ function render() {
     grid.appendChild(card);
   });
 
+  bottomBanners.classList.toggle('alert-active', anyBusy);
   alertWrapper.classList.toggle('alert-active', anyBusy);
   alertWrapper.style.display = anyBusy || modeActive ? 'flex' : 'none';
   updateAlertMessage(anyBusy);
