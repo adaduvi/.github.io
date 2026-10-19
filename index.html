@@ -559,17 +559,27 @@
     font:500 14px/1.35 var(--font-body);
     overflow-wrap:anywhere;
   }
+  .attendance-banner-details{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:10px;
+    max-width:100%;
+  }
+  .attendance-banner-details .attendance-banner-status{max-width:none;}
   .attendance-banner-countdown{
     display:block;
     color:#9fc1ff;
     font:600 20px/1 var(--font-mono);
     font-variant-numeric:tabular-nums;
+    white-space:nowrap;
   }
   .attendance-qr-canvas{
     display:block;
     width:min(100%,180px);
     height:auto;
-    padding:8px;
+    padding:2px;
     border-radius:10px;
     background:#fff;
   }
@@ -944,9 +954,11 @@
   <section class="bottom-banners" id="bottomBanners">
     <button class="attendance-banner" id="attendanceBanner" type="button" aria-label="Mostrar QR de presentismo" aria-pressed="false">
       <span class="attendance-banner-label" id="attendanceBannerLabel">Presentismo</span>
-      <span class="attendance-banner-status" id="attendanceBannerStatus" role="status" aria-live="polite" hidden></span>
+      <span class="attendance-banner-details">
+        <span class="attendance-banner-status" id="attendanceBannerStatus" role="status" aria-live="polite" hidden></span>
+        <span class="attendance-banner-countdown" id="attendanceBannerCountdown" aria-live="off" hidden></span>
+      </span>
       <canvas class="attendance-qr-canvas" id="attendanceQrCanvas" hidden></canvas>
-      <span class="attendance-banner-countdown" id="attendanceBannerCountdown" aria-live="off" hidden></span>
     </button>
     <div class="bottom-banner-content">
       <div class="alert-wrapper mode-active" id="alertWrapper">
@@ -1857,8 +1869,8 @@ function drawAttendanceQr(value) {
   qr.addData(value);
   qr.make();
   const moduleCount = qr.getModuleCount();
-  const quietZone = 4;
-  const moduleSize = 8;
+  const quietZone = 1;
+  const moduleSize = 9;
   const canvasSize = (moduleCount + quietZone * 2) * moduleSize;
   const context = attendanceQrCanvas.getContext('2d');
   if (!context) throw new Error('No se pudo inicializar el lienzo del código QR.');
