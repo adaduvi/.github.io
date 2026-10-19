@@ -631,7 +631,7 @@
     display:flex;
     align-items:center;
     width:100%;
-    height:100px;
+    height:75px;
     margin:16px 0 0;
     padding:24px 32px;
     border:1px solid rgba(255,255,255,.12);
@@ -679,8 +679,8 @@
     justify-content:center;
     width:100%;
     min-width:0;
-    min-height:190px;
-    height:190px;
+    min-height:215px;
+    height:215px;
     padding:34px 40px;
     overflow:hidden;
     border:1px solid rgba(255,255,255,.12);
@@ -1105,6 +1105,9 @@ let alertMessageIndex = 0;
 let alertMessageActive = false;
 let attendanceCountdownTimer = null;
 let attendanceLoading = false;
+let attendanceRefreshTimer = null;
+let attendanceRecords = null;
+let attendanceInitializationColumnAvailable = false;
 let simulationMessageTimer = null;
 let simulationEnabled = false;
 let simulationMessageIndex = 0;
@@ -1826,11 +1829,13 @@ async function loadAttendanceRecords() {
     day: headerCells.indexOf('dia'),
     hour: headerCells.indexOf('horario'),
     subject: headerCells.indexOf('materia'),
-    url: headerCells.indexOf('url')
+    url: headerCells.indexOf('url'),
+    initialization: headerCells.indexOf('inicioclase')
   };
-  if (Object.values(columnIndexes).some((columnIndex) => columnIndex < 0)) {
+  if ([columnIndexes.day, columnIndexes.hour, columnIndexes.subject, columnIndexes.url].some((columnIndex) => columnIndex < 0)) {
     throw new Error('La planilla debe incluir las columnas Dia, Horario, Materia y URL.');
   }
+  attendanceInitializationColumnAvailable = columnIndexes.initialization >= 0;
 
   return rows.slice(1).map((row) => {
     const cells = cellsForRow(row);
@@ -1838,9 +1843,12 @@ async function loadAttendanceRecords() {
       day: valueForCell(cells[columnIndexes.day]),
       hour: Number(valueForCell(cells[columnIndexes.hour])),
       subject: valueForCell(cells[columnIndexes.subject]),
-      url: valueForCell(cells[columnIndexes.url])
+      url: valueForCell(cells[columnIndexes.url]),
+      initialization: attendanceInitializationColumnAvailable
+        ? valueForCell(cells[columnIndexes.initialization])
+        : ''
     };
-  }).filter((record) => record.day && record.subject && record.url && Number.isInteger(record.hour));
+  }).filter((record) => record.day && record.subject && Number.isInteger(record.hour));
 }
 
 function normalizedWeekday(day) {
@@ -1913,11 +1921,10 @@ async function showAttendance() {
     if (hour < 8 || hour > 21) {
       throw new Error('El presentismo está disponible entre las 8:00 y las 21:59.');
     }
-    const records = await loadAttendanceRecords();
-    const record = records.find((item) =>
-      normalizedWeekday(item.day) === weekday && item.hour === hour
-    );
+    attendanceRecords = await loadAttendanceRecords();
+    const record = findCurrentAttendanceRecord(now);
     if (!record) throw new Error('No hay una materia registrada para el día y horario actuales.');
+    if (!record.url) throw new Error('La URL no está cargada para esta materia y horario.');
 
     const url = normalizeAttendanceUrl(record.url);
     drawAttendanceQr(url);
@@ -1937,6 +1944,60 @@ async function showAttendance() {
   } finally {
     attendanceLoading = false;
     attendanceBanner.disabled = false;
+  }
+}
+
+function findCurrentAttendanceRecord(now = new Date()) {
+  if (!attendanceRecords) return null;
+  const weekday = normalizedWeekday(new Intl.DateTimeFormat('es-AR', { weekday: 'long' }).format(now));
+  return attendanceRecords.find((record) =>
+    normalizedWeekday(record.day) === weekday && record.hour === now.getHours()
+  ) || null;
+}
+
+function renderAttendanceIdleState(now = new Date()) {
+  if (attendanceCountdownTimer !== null || attendanceLoading) return;
+  const record = findCurrentAttendanceRecord(now);
+  attendanceBannerLabel.textContent = record ? record.subject : 'Presentismo';
+  attendanceBanner.setAttribute('aria-label', record
+    ? `Mostrar QR de ${record.subject}`
+    : 'Mostrar QR de presentismo');
+  attendanceBanner.setAttribute('aria-pressed', 'false');
+  attendanceBannerCountdown.hidden = true;
+  attendanceQrCanvas.hidden = true;
+  attendanceBanner.classList.remove('has-error');
+
+  if (!record) {
+    attendanceBannerStatus.textContent = now.getHours() < 8 || now.getHours() > 21
+      ? 'Sin clase programada en este horario'
+      : 'No hay una materia registrada para este horario';
+    attendanceBannerStatus.hidden = false;
+    return;
+  }
+
+  if (!attendanceInitializationColumnAvailable) {
+    attendanceBannerStatus.textContent = 'Falta la columna Inicioclase en qr.ods';
+    attendanceBannerStatus.hidden = false;
+    attendanceBanner.classList.add('has-error');
+    return;
+  }
+
+  attendanceBannerStatus.textContent = record.initialization || 'Sin valor de inicioclase';
+  attendanceBannerStatus.hidden = false;
+}
+
+async function refreshAttendanceSchedule() {
+  if (attendanceLoading) return;
+  try {
+    attendanceRecords = await loadAttendanceRecords();
+    renderAttendanceIdleState();
+  } catch (error) {
+    if (attendanceCountdownTimer !== null) return;
+    attendanceBannerLabel.textContent = 'Presentismo';
+    attendanceBannerStatus.textContent = error.message;
+    attendanceBannerStatus.hidden = false;
+    attendanceBanner.classList.add('has-error');
+    console.error('No se pudo actualizar la materia de presentismo:', error);
   }
 }
 
@@ -1974,12 +2035,16 @@ function resetAttendanceBanner() {
   attendanceQrCanvas.width = 0;
   attendanceQrCanvas.height = 0;
   attendanceQrCanvas.removeAttribute('aria-label');
-  attendanceBanner.classList.remove('has-error');
+  renderAttendanceIdleState();
 }
 
 attendanceBanner.addEventListener('click', () => {
   void showAttendance();
 });
+void refreshAttendanceSchedule();
+attendanceRefreshTimer = setInterval(() => {
+  void refreshAttendanceSchedule();
+}, 60 * 1000);
 
 modeToggle.addEventListener('click', async () => {
   modeActive = !modeActive;
