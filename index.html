@@ -631,9 +631,9 @@
     display:flex;
     align-items:center;
     width:100%;
-    height:75px;
+    height:60px;
     margin:16px 0 0;
-    padding:24px 32px;
+    padding:10px 32px;
     border:1px solid rgba(255,255,255,.12);
     border-radius:var(--radius);
     background:linear-gradient(145deg,var(--surface-2),var(--surface));
@@ -679,8 +679,8 @@
     justify-content:center;
     width:100%;
     min-width:0;
-    min-height:215px;
-    height:215px;
+    min-height:230px;
+    height:230px;
     padding:34px 40px;
     overflow:hidden;
     border:1px solid rgba(255,255,255,.12);
@@ -1108,6 +1108,7 @@ let attendanceLoading = false;
 let attendanceRefreshTimer = null;
 let attendanceRecords = null;
 let attendanceInitializationColumnAvailable = false;
+let attendanceHasSubjects = null;
 let simulationMessageTimer = null;
 let simulationEnabled = false;
 let simulationMessageIndex = 0;
@@ -1837,7 +1838,12 @@ async function loadAttendanceRecords() {
   }
   attendanceInitializationColumnAvailable = columnIndexes.initialization >= 0;
 
-  return rows.slice(1).map((row) => {
+  const dataRows = rows.slice(1);
+  attendanceHasSubjects = dataRows.some((row) =>
+    Boolean(valueForCell(cellsForRow(row)[columnIndexes.subject]))
+  );
+
+  return dataRows.map((row) => {
     const cells = cellsForRow(row);
     return {
       day: valueForCell(cells[columnIndexes.day]),
@@ -1916,12 +1922,12 @@ async function showAttendance() {
 
   try {
     const now = new Date();
-    const weekday = normalizedWeekday(new Intl.DateTimeFormat('es-AR', { weekday: 'long' }).format(now));
     const hour = now.getHours();
+    attendanceRecords = await loadAttendanceRecords();
+    if (!attendanceHasSubjects) throw new Error('materia no cargada');
     if (hour < 8 || hour > 21) {
       throw new Error('El presentismo está disponible entre las 8:00 y las 21:59.');
     }
-    attendanceRecords = await loadAttendanceRecords();
     const record = findCurrentAttendanceRecord(now);
     if (!record) throw new Error('No hay una materia registrada para el día y horario actuales.');
     if (!record.url) throw new Error('La URL no está cargada para esta materia y horario.');
@@ -1957,6 +1963,18 @@ function findCurrentAttendanceRecord(now = new Date()) {
 
 function renderAttendanceIdleState(now = new Date()) {
   if (attendanceCountdownTimer !== null || attendanceLoading) return;
+  if (attendanceHasSubjects === false) {
+    attendanceBannerLabel.textContent = '';
+    attendanceBannerStatus.textContent = '';
+    attendanceBannerStatus.hidden = true;
+    attendanceBannerCountdown.hidden = true;
+    attendanceQrCanvas.hidden = true;
+    attendanceBanner.classList.remove('has-error');
+    attendanceBanner.setAttribute('aria-label', 'Presentismo: materia no cargada');
+    attendanceBanner.setAttribute('aria-pressed', 'false');
+    return;
+  }
+
   const record = findCurrentAttendanceRecord(now);
   attendanceBannerLabel.textContent = record ? record.subject : 'Presentismo';
   attendanceBanner.setAttribute('aria-label', record
