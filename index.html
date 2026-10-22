@@ -74,6 +74,38 @@
       radial-gradient(780px 560px at 105% 15%, rgba(38,130,95,.38), transparent 62%),
       linear-gradient(145deg, #1c7f5c 0%, #2e8d6c 38%, #0d3f2f 100%);
   }
+  .halloween-rope{
+    position:fixed;
+    z-index:3;
+    top:0;
+    left:0;
+    width:2px;
+    height:0;
+    display:none;
+    pointer-events:none;
+    background:#111;
+    transform:translateX(-50%);
+  }
+  body.halloween-mode .halloween-rope{display:block;}
+  .halloween-ghost{
+    position:fixed;
+    z-index:4;
+    width:clamp(75px, 10vw, 160px);
+    max-width:28vw;
+    max-height:35vh;
+    height:auto;
+    pointer-events:none;
+    display:none;
+    opacity:0;
+    object-fit:contain;
+    transform:translate(-50%, -50%);
+    filter:drop-shadow(0 8px 8px rgba(0,0,0,.3));
+    will-change:left, top, transform;
+  }
+  body.halloween-mode .halloween-ghost{
+    display:block;
+    opacity:.92;
+  }
 
   .snow-layer{
     position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;display:none;
@@ -902,6 +934,8 @@
 <div class="santa-sleigh" id="santaSleigh" aria-hidden="true">
   <img class="santa-sleigh-image" src="extra/trineo.png" alt="" />
 </div>
+<div class="halloween-rope" id="halloweenRope" aria-hidden="true"></div>
+<img class="halloween-ghost" id="halloweenGhost" src="fechas_patrias/fantasma.png" alt="" aria-hidden="true" />
 <img class="september-airplane" id="septemberAirplane" src="fechas_patrias/11%20de%20septiembre%20-%20avion.png" alt="" aria-hidden="true" />
 <img class="special-event" id="specialEvent" src="extra/Julio.png" alt="" aria-hidden="true" />
 <div class="wrap">
@@ -947,6 +981,7 @@
       <button class="patria-event-toggle" type="button" data-event-date="21 de septiembre" aria-pressed="false">21 de septiembre</button>
       <button class="patria-event-toggle" type="button" data-event-date="12 de octubre" aria-pressed="false">12 de octubre</button>
       <button class="patria-event-toggle" type="button" data-event-date="30 de octubre" aria-pressed="false">30 de octubre</button>
+      <button class="patria-event-toggle" type="button" data-event-date="31 de octubre" aria-pressed="false">31 de octubre · Halloween</button>
       <button class="patria-event-toggle" type="button" data-event-date="20 de noviembre" aria-pressed="false">20 de noviembre</button>
     </div>
   </section>
@@ -1027,6 +1062,8 @@ const snowLayer = document.getElementById('snowLayer');
 const butterflyLayer = document.getElementById('butterflyLayer');
 const santaSleigh = document.getElementById('santaSleigh');
 const sleighSparks = document.getElementById('sleighSparks');
+const halloweenRope = document.getElementById('halloweenRope');
+const halloweenGhost = document.getElementById('halloweenGhost');
 const septemberAirplane = document.getElementById('septemberAirplane');
 const specialEvent = document.getElementById('specialEvent');
 const alertImage = document.querySelector('.alert-image');
@@ -1037,6 +1074,8 @@ const SPECIAL_EVENT_NAMES = ['Julio', 'Barby', 'AgustinaR'];
 const SPECIAL_EVENT_PROBABILITY = 0.05;
 const SPECIAL_EVENT_INTERVAL = 10 * 60 * 1000;
 const SPECIAL_EVENT_DURATION = 4000;
+const HALLOWEEN_ROPE_END_OFFSET = -40;
+const HALLOWEEN_ROPE_HORIZONTAL_OFFSET = -2;
 
 const MODE_IMAGE_DIR = 'extra/';
 const MODE_MANIFEST_PATH = `${MODE_IMAGE_DIR}manifest.json`;
@@ -1064,6 +1103,7 @@ const PATRIA_EVENTS = [
   { day: 21, month: 8, label: '21 de septiembre' },
   { day: 12, month: 9, label: '12 de octubre' },
   { day: 30, month: 9, label: '30 de octubre' },
+  { day: 31, month: 9, label: '31 de octubre' },
   { day: 20, month: 10, label: '20 de noviembre' }
 ];
 
@@ -1088,6 +1128,14 @@ let sleighTargetY = 0;
 let sleighDirection = 1;
 let sleighInitialized = false;
 let sleighSparkTimer = null;
+let ghostAnimationFrame = null;
+let ghostLastFrame = 0;
+let ghostX = 0;
+let ghostY = 0;
+let ghostBaseY = 0;
+let ghostTargetY = 0;
+let ghostDirection = 1;
+let ghostInitialized = false;
 let airplaneAnimationFrame = null;
 let airplaneLastFrame = 0;
 let airplaneX = 0;
@@ -1283,6 +1331,64 @@ function stopSeptemberAirplane() {
   airplaneInitialized = false;
 }
 
+function chooseHalloweenGhostHeight() {
+  const imageHeight = halloweenGhost.getBoundingClientRect().height || 140;
+  const margin = Math.min(imageHeight / 2 + 12, window.innerHeight * .1);
+  ghostTargetY = margin + Math.random() * Math.max(1, window.innerHeight - margin * 2);
+}
+
+function animateHalloweenGhost(timestamp) {
+  if (!halloweenGhost || !patriaMode || selectedPatriaEvent?.label !== '31 de octubre') {
+    ghostAnimationFrame = null;
+    return;
+  }
+  const elapsed = Math.min(48, timestamp - (ghostLastFrame || timestamp));
+  ghostLastFrame = timestamp;
+  const imageWidth = halloweenGhost.getBoundingClientRect().width || 120;
+  const imageHeight = halloweenGhost.getBoundingClientRect().height || 140;
+  ghostX += ghostDirection * elapsed * .11;
+  if (ghostX > window.innerWidth + imageWidth / 2) ghostX = -imageWidth / 2;
+  if (ghostX < -imageWidth / 2) ghostX = window.innerWidth + imageWidth / 2;
+  ghostBaseY += (ghostTargetY - ghostBaseY) * Math.min(1, elapsed / 2600);
+  if (Math.abs(ghostTargetY - ghostBaseY) < 2) chooseHalloweenGhostHeight();
+  const margin = Math.min(imageHeight / 2 + 12, window.innerHeight * .1);
+  const wave = Math.sin(timestamp / 700) * 34;
+  ghostY = Math.max(margin, Math.min(window.innerHeight - margin, ghostBaseY + wave));
+  halloweenGhost.style.left = `${ghostX}px`;
+  halloweenGhost.style.top = `${ghostY}px`;
+  halloweenGhost.style.transform = `translate(-50%, -50%) scaleX(${ghostDirection})`;
+  halloweenRope.style.left = `${ghostX + HALLOWEEN_ROPE_HORIZONTAL_OFFSET}px`;
+  halloweenRope.style.height = `${Math.max(0, ghostY + HALLOWEEN_ROPE_END_OFFSET)}px`;
+  ghostAnimationFrame = requestAnimationFrame(animateHalloweenGhost);
+}
+
+function startHalloweenGhost() {
+  if (!halloweenGhost || !patriaMode || selectedPatriaEvent?.label !== '31 de octubre') return;
+  const imageWidth = halloweenGhost.getBoundingClientRect().width || 120;
+  const imageHeight = halloweenGhost.getBoundingClientRect().height || 140;
+  if (!ghostInitialized) {
+    ghostX = -imageWidth / 2;
+    ghostY = Math.max(imageHeight / 2, window.innerHeight * .3);
+    ghostBaseY = ghostY;
+    chooseHalloweenGhostHeight();
+    ghostInitialized = true;
+  }
+  halloweenGhost.style.left = `${ghostX}px`;
+  halloweenGhost.style.top = `${ghostY}px`;
+  halloweenGhost.style.transform = `translate(-50%, -50%) scaleX(${ghostDirection})`;
+  halloweenRope.style.left = `${ghostX + HALLOWEEN_ROPE_HORIZONTAL_OFFSET}px`;
+  halloweenRope.style.height = `${Math.max(0, ghostY + HALLOWEEN_ROPE_END_OFFSET)}px`;
+  cancelAnimationFrame(ghostAnimationFrame);
+  ghostLastFrame = 0;
+  ghostAnimationFrame = requestAnimationFrame(animateHalloweenGhost);
+}
+
+function stopHalloweenGhost() {
+  cancelAnimationFrame(ghostAnimationFrame);
+  ghostAnimationFrame = null;
+  ghostInitialized = false;
+}
+
 function chooseSantaSleighHeight() {
   const imageHeight = santaSleigh.getBoundingClientRect().height || 140;
   const margin = Math.min(imageHeight / 2 + 12, window.innerHeight * .1);
@@ -1377,9 +1483,11 @@ function updatePatriaBackground(event) {
     document.body.classList.remove('october-twelfth-mode');
     document.body.classList.remove('september-eleventh-mode');
     document.body.classList.remove('september-twenty-first-mode');
+    document.body.classList.remove('halloween-mode');
     document.body.style.background = '';
     stopSeptemberButterflies();
     stopSeptemberAirplane();
+    stopHalloweenGhost();
     return;
   }
   const backgroundMap = {
@@ -1388,13 +1496,15 @@ function updatePatriaBackground(event) {
     '21 de septiembre': 'fechas_patrias/21%20e%20septiembre%20-%20fondo.jpeg',
     '25 de mayo': 'fechas_patrias/25%20de%20mayo%20-%20fondo.jpg',
     '17 de junio': 'fechas_patrias/17%20de%20junio%20-%20fondo.webp',
-    '12 de octubre': 'fechas_patrias/12%20de%20octubre%20-%20fondo.jpg'
+    '12 de octubre': 'fechas_patrias/12%20de%20octubre%20-%20fondo.jpg',
+    '31 de octubre': 'fechas_patrias/31%20de%20octubre%20-%20fondo.png'
   };
   const backgroundUrl = backgroundMap[event.label] || 'fechas_patrias/fondo.webp';
   document.body.classList.add('has-patria-background');
   document.body.classList.toggle('october-twelfth-mode', event.label === '12 de octubre');
   document.body.classList.toggle('september-eleventh-mode', event.label === '11 de septiembre');
   document.body.classList.toggle('september-twenty-first-mode', event.label === '21 de septiembre');
+  document.body.classList.toggle('halloween-mode', event.label === '31 de octubre');
   if (backgroundUrl) {
     const overlay = event.label === '8 de marzo'
       ? 'rgba(236,104,155,.28)'
@@ -1412,6 +1522,11 @@ function updatePatriaBackground(event) {
     startSeptemberAirplane();
   } else {
     stopSeptemberAirplane();
+  }
+  if (event.label === '31 de octubre') {
+    startHalloweenGhost();
+  } else {
+    stopHalloweenGhost();
   }
 }
 
@@ -2145,6 +2260,7 @@ updateWomenDayMode();
 updatePatriaMode();
 window.addEventListener('resize', () => {
   if (decemberMode) chooseSantaSleighHeight();
+  if (patriaMode && selectedPatriaEvent?.label === '31 de octubre') chooseHalloweenGhostHeight();
   scheduleCaptionScroll();
 });
 setInterval(() => {
