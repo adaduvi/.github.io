@@ -1120,6 +1120,7 @@ let decemberMode = false;
 let patriaMode = false;
 let womenDayMode = false;
 let selectedPatriaEvent = null;
+let patriaEventOverride = false;
 let sleighAnimationFrame = null;
 let sleighLastFrame = 0;
 let sleighX = 0;
@@ -1531,7 +1532,7 @@ function updatePatriaBackground(event) {
 }
 
 function updatePatriaMode() {
-  const event = getPatriaEvent(new Date());
+  const event = patriaEventOverride ? selectedPatriaEvent : getPatriaEvent(new Date());
   selectedPatriaEvent = event;
   setPatriaMode(Boolean(event), event);
   updatePatriaBackground(event);
@@ -2199,6 +2200,7 @@ modeToggle.addEventListener('click', async () => {
     setDecemberMode(decemberMode);
     setWomenDayMode(womenDayMode);
     selectedPatriaEvent = null;
+    patriaEventOverride = false;
     setPatriaMode(false);
     updatePatriaBackground(null);
     stopModeImageRotation();
@@ -2236,6 +2238,7 @@ patriaEventToggles.forEach((button) => {
     const event = PATRIA_EVENTS.find((item) => item.label === button.dataset.eventDate);
     if (!event) return;
     selectedPatriaEvent = patriaMode && selectedPatriaEvent && selectedPatriaEvent.label === event.label ? null : event;
+    patriaEventOverride = Boolean(selectedPatriaEvent);
     setPatriaMode(Boolean(selectedPatriaEvent), selectedPatriaEvent);
     if (selectedPatriaEvent && selectedPatriaEvent.label === '8 de marzo') {
       setWomenDayMode(true);
